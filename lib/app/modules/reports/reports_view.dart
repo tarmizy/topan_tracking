@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/models/traccar_models.dart';
 import 'reports_controller.dart';
@@ -9,9 +10,9 @@ class ReportsView extends GetView<ReportsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text('Laporan'),
         actions: [
           IconButton(
@@ -33,7 +34,7 @@ class ReportsView extends GetView<ReportsController> {
   Widget _buildFilters() {
     return Container(
       padding: const EdgeInsets.all(12),
-      color: const Color(0xFF1A1A1A),
+      color: AppColors.surface,
       child: Row(
         children: [
           Expanded(
@@ -41,7 +42,7 @@ class ReportsView extends GetView<ReportsController> {
               () => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -49,16 +50,16 @@ class ReportsView extends GetView<ReportsController> {
                     value: controller.selectedDevice.value,
                     hint: const Text(
                       'Pilih Kendaraan',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
-                    dropdownColor: const Color(0xFF1A1A1A),
+                    dropdownColor: AppColors.surface,
                     isExpanded: true,
                     items: controller.devices.map((device) {
                       return DropdownMenuItem(
                         value: device,
                         child: Text(
                           device.name,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: AppColors.textPrimary),
                         ),
                       );
                     }).toList(),
@@ -77,20 +78,20 @@ class ReportsView extends GetView<ReportsController> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     const Icon(
                       Icons.date_range,
-                      color: Color(0xFF00D4FF),
+                      color: AppColors.primary,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '${controller.formatDate(controller.startDate.value ?? DateTime.now())} - ${controller.formatDate(controller.endDate.value ?? DateTime.now())}',
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 11),
                     ),
                   ],
                 ),
@@ -105,7 +106,7 @@ class ReportsView extends GetView<ReportsController> {
   Widget _buildReportTabs() {
     return Container(
       height: 50,
-      color: const Color(0xFF1A1A1A),
+      color: AppColors.surface,
       child: Obx(
         () => ListView(
           scrollDirection: Axis.horizontal,
@@ -130,7 +131,7 @@ class ReportsView extends GetView<ReportsController> {
         margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00D4FF) : const Color(0xFF0A0A0A),
+          color: isSelected ? AppColors.primary : AppColors.background,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -138,13 +139,13 @@ class ReportsView extends GetView<ReportsController> {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.black : Colors.grey,
+              color: isSelected ? AppColors.onPrimary : AppColors.textSecondary,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey,
+                color: isSelected ? AppColors.onPrimary : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 12,
               ),
@@ -159,7 +160,7 @@ class ReportsView extends GetView<ReportsController> {
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(
-          child: CircularProgressIndicator(color: Color(0xFF00D4FF)),
+          child: CircularProgressIndicator(color: AppColors.primary),
         );
       }
 
@@ -167,7 +168,7 @@ class ReportsView extends GetView<ReportsController> {
         return const Center(
           child: Text(
             'Pilih kendaraan untuk melihat laporan',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         );
       }
@@ -192,7 +193,7 @@ class ReportsView extends GetView<ReportsController> {
       final summary = controller.summaryData.value;
       if (summary == null) {
         return const Center(
-          child: Text('Tidak ada data', style: TextStyle(color: Colors.grey)),
+          child: Text('Tidak ada data', style: TextStyle(color: AppColors.textSecondary)),
         );
       }
 
@@ -214,7 +215,7 @@ class ReportsView extends GetView<ReportsController> {
                   'Total Jarak',
                   '${summary.totalDistanceKm.toStringAsFixed(1)} km',
                   Icons.straighten,
-                  Colors.green,
+                  AppColors.success,
                 ),
               ],
             ),
@@ -225,7 +226,7 @@ class ReportsView extends GetView<ReportsController> {
                   'Kec. Maks',
                   '${summary.maxSpeedKmh.toStringAsFixed(0)} km/h',
                   Icons.speed,
-                  Colors.orange,
+                  AppColors.warning,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
@@ -250,7 +251,7 @@ class ReportsView extends GetView<ReportsController> {
                   'Est. BBM',
                   '${summary.totalFuelLiters.toStringAsFixed(1)} L',
                   Icons.local_gas_station,
-                  Colors.red,
+                  AppColors.danger,
                 ),
               ],
             ),
@@ -260,7 +261,7 @@ class ReportsView extends GetView<ReportsController> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -269,7 +270,7 @@ class ReportsView extends GetView<ReportsController> {
                   const Text(
                     'Perjalanan per Hari',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -294,7 +295,7 @@ class ReportsView extends GetView<ReportsController> {
                                 Text(
                                   '${e.value}',
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.textPrimary,
                                     fontSize: 10,
                                   ),
                                 ),
@@ -302,7 +303,7 @@ class ReportsView extends GetView<ReportsController> {
                                 Container(
                                   height: height,
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF00D4FF),
+                                    color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -310,7 +311,7 @@ class ReportsView extends GetView<ReportsController> {
                                 Text(
                                   e.key,
                                   style: const TextStyle(
-                                    color: Colors.grey,
+                                    color: AppColors.textSecondary,
                                     fontSize: 8,
                                   ),
                                 ),
@@ -340,7 +341,7 @@ class ReportsView extends GetView<ReportsController> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -351,14 +352,14 @@ class ReportsView extends GetView<ReportsController> {
             Text(
               value,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -372,7 +373,7 @@ class ReportsView extends GetView<ReportsController> {
         return const Center(
           child: Text(
             'Tidak ada perjalanan',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         );
       }
@@ -393,7 +394,7 @@ class ReportsView extends GetView<ReportsController> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -401,19 +402,19 @@ class ReportsView extends GetView<ReportsController> {
         children: [
           Row(
             children: [
-              const Icon(Icons.play_circle, color: Colors.green, size: 20),
+              const Icon(Icons.play_circle, color: AppColors.success, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   trip.startAddress ?? 'Lokasi awal',
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 controller.formatDateTime(trip.startTime),
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
               ),
             ],
           ),
@@ -422,7 +423,7 @@ class ReportsView extends GetView<ReportsController> {
             padding: const EdgeInsets.only(left: 10),
             decoration: const BoxDecoration(
               border: Border(
-                left: BorderSide(color: Color(0xFF00D4FF), width: 2),
+                left: BorderSide(color: AppColors.primary, width: 2),
               ),
             ),
             child: Padding(
@@ -444,19 +445,19 @@ class ReportsView extends GetView<ReportsController> {
           ),
           Row(
             children: [
-              const Icon(Icons.stop_circle, color: Colors.red, size: 20),
+              const Icon(Icons.stop_circle, color: AppColors.danger, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   trip.endAddress ?? 'Lokasi akhir',
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 controller.formatDateTime(trip.endTime),
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
               ),
             ],
           ),
@@ -469,9 +470,9 @@ class ReportsView extends GetView<ReportsController> {
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 14),
+          Icon(icon, color: AppColors.textSecondary, size: 14),
           const SizedBox(width: 4),
-          Text(value, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(value, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
         ],
       ),
     );
@@ -483,7 +484,7 @@ class ReportsView extends GetView<ReportsController> {
         return const Center(
           child: Text(
             'Tidak ada data berhenti',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         );
       }
@@ -497,7 +498,7 @@ class ReportsView extends GetView<ReportsController> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -506,13 +507,13 @@ class ReportsView extends GetView<ReportsController> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: stop.engineOff
-                        ? Colors.red.withValues(alpha: 0.2)
-                        : Colors.orange.withValues(alpha: 0.2),
+                        ? AppColors.danger.withValues(alpha: 0.2)
+                        : AppColors.warning.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     stop.engineOff ? Icons.power_off : Icons.local_parking,
-                    color: stop.engineOff ? Colors.red : Colors.orange,
+                    color: stop.engineOff ? AppColors.danger : AppColors.warning,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -523,7 +524,7 @@ class ReportsView extends GetView<ReportsController> {
                       Text(
                         stop.address ??
                             '${stop.latitude.toStringAsFixed(4)}, ${stop.longitude.toStringAsFixed(4)}',
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -531,7 +532,7 @@ class ReportsView extends GetView<ReportsController> {
                       Text(
                         '${controller.formatDateTime(stop.startTime)} - ${controller.formatDateTime(stop.endTime)}',
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                           fontSize: 11,
                         ),
                       ),
@@ -544,13 +545,13 @@ class ReportsView extends GetView<ReportsController> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     controller.formatDuration(stop.durationMinutes),
                     style: const TextStyle(
-                      color: Color(0xFF00D4FF),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -567,7 +568,7 @@ class ReportsView extends GetView<ReportsController> {
     return Obx(() {
       if (controller.events.isEmpty) {
         return const Center(
-          child: Text('Tidak ada event', style: TextStyle(color: Colors.grey)),
+          child: Text('Tidak ada event', style: TextStyle(color: AppColors.textSecondary)),
         );
       }
 
@@ -580,7 +581,7 @@ class ReportsView extends GetView<ReportsController> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -594,14 +595,14 @@ class ReportsView extends GetView<ReportsController> {
                       Text(
                         event.eventTitle,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
                         controller.formatDateTime(event.eventTime),
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -622,7 +623,7 @@ class ReportsView extends GetView<ReportsController> {
         return const Center(
           child: Text(
             'Tidak ada data BBM',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         );
       }
@@ -648,14 +649,14 @@ class ReportsView extends GetView<ReportsController> {
                   'Total BBM',
                   '${totalFuel.toStringAsFixed(1)} L',
                   Icons.local_gas_station,
-                  Colors.red,
+                  AppColors.danger,
                 ),
                 const SizedBox(width: 12),
                 _buildStatCard(
                   'Efisiensi',
                   '${efficiency.toStringAsFixed(1)} km/L',
                   Icons.eco,
-                  Colors.green,
+                  AppColors.success,
                 ),
               ],
             ),
@@ -663,7 +664,7 @@ class ReportsView extends GetView<ReportsController> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -672,7 +673,7 @@ class ReportsView extends GetView<ReportsController> {
                   const Text(
                     'Konsumsi per Perjalanan',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -688,20 +689,20 @@ class ReportsView extends GetView<ReportsController> {
                                 child: Text(
                                   controller.formatDateTime(trip.startTime),
                                   style: const TextStyle(
-                                    color: Colors.grey,
+                                    color: AppColors.textSecondary,
                                     fontSize: 12,
                                   ),
                                 ),
                               ),
                               Text(
                                 '${trip.distanceKm.toStringAsFixed(1)} km',
-                                style: const TextStyle(color: Colors.white),
+                                style: const TextStyle(color: AppColors.textPrimary),
                               ),
                               const SizedBox(width: 16),
                               Text(
                                 '${trip.spentFuel.toStringAsFixed(1)} L',
                                 style: const TextStyle(
-                                  color: Color(0xFF00D4FF),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],

@@ -22,7 +22,7 @@ class GradientButton extends StatelessWidget {
       height: 56,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.secondary, AppColors.primary],
+          colors: [AppColors.secondary, AppColors.primary, AppColors.primaryDark],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -42,7 +42,7 @@ class GradientButton extends StatelessWidget {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   strokeWidth: 2,
                 ),
               )
@@ -52,14 +52,14 @@ class GradientButton extends StatelessWidget {
                   Text(
                     text,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (icon != null) ...[
                     const SizedBox(width: 8),
-                    Icon(icon, color: Colors.white, size: 20),
+                    Icon(icon, color: AppColors.onPrimary, size: 20),
                   ],
                 ],
               ),

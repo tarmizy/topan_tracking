@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Topan Tracking',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       initialRoute: AppPages.initial,
       getPages: AppPages.routes,
     );

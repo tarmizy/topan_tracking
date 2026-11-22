@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/traccar_api_service.dart';
@@ -32,6 +33,13 @@ class ReportsController extends GetxController {
     endDate.value = DateTime(now.year, now.month, now.day, 23, 59, 59);
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    // Langsung tampilkan ringkasan 7 hari terakhir saat halaman dibuka.
+    loadReport();
+  }
+
   void selectDevice(TraccarDevice device) {
     _vehicleService.selectDevice(device);
     loadReport();
@@ -56,10 +64,10 @@ class ReportsController extends GetxController {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF00D4FF),
-              onPrimary: Colors.black,
-              surface: Color(0xFF1A1A1A),
-              onSurface: Colors.white,
+              primary: AppColors.primary,
+              onPrimary: AppColors.onPrimary,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,

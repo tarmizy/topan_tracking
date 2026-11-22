@@ -14,12 +14,12 @@ class NotificationsView extends GetView<NotificationsController> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: const Text(
           'Notifikasi',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         actions: [
@@ -117,7 +117,7 @@ class _NotificationCard extends GetView<NotificationsController> {
                         child: Text(
                           notification.title,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: notification.isRead
                                 ? FontWeight.normal
                                 : FontWeight.bold,
@@ -163,9 +163,9 @@ class _NotificationCard extends GetView<NotificationsController> {
   Color _getTypeColor(String type) {
     switch (type) {
       case 'alert':
-        return Colors.red;
+        return AppColors.danger;
       case 'warning':
-        return Colors.orange;
+        return AppColors.warning;
       default:
         return AppColors.primary;
     }

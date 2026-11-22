@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
@@ -106,6 +107,14 @@ class HomeController extends GetxController {
       isLoading.value = true;
       await _vehicleService.loadInitialData();
       debugPrint('HomeController: loadInitialData complete');
+      // Posisi baru tersedia setelah data dimuat: arahkan peta ke kendaraan.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          centerOnVehicle();
+        } catch (e) {
+          debugPrint('centerOnVehicle after load failed: $e');
+        }
+      });
     } catch (e, stackTrace) {
       debugPrint('HomeController Error loading data: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -113,8 +122,8 @@ class HomeController extends GetxController {
         'Error',
         'Gagal memuat data',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
       );
     } finally {
       isLoading.value = false;
@@ -138,7 +147,7 @@ class HomeController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -148,7 +157,7 @@ class HomeController extends GetxController {
             const Text(
               'Pilih Peta',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -172,12 +181,12 @@ class HomeController extends GetxController {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: selectedMapProvider.value == provider
-                ? const Color(0xFF00D4FF).withValues(alpha: 0.2)
-                : const Color(0xFF0A0A0A),
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : AppColors.background,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selectedMapProvider.value == provider
-                  ? const Color(0xFF00D4FF)
+                  ? AppColors.primary
                   : Colors.transparent,
             ),
           ),
@@ -186,8 +195,8 @@ class HomeController extends GetxController {
               Icon(
                 _getMapIcon(provider),
                 color: selectedMapProvider.value == provider
-                    ? const Color(0xFF00D4FF)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -197,19 +206,19 @@ class HomeController extends GetxController {
                     Text(
                       provider.label,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       _getMapDescription(provider),
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
               ),
               if (selectedMapProvider.value == provider)
-                const Icon(Icons.check_circle, color: Color(0xFF00D4FF)),
+                const Icon(Icons.check_circle, color: AppColors.primary),
             ],
           ),
         ),
@@ -337,7 +346,7 @@ class HomeController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -350,13 +359,13 @@ class HomeController extends GetxController {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: device.isOnline
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.red.withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.danger.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.directions_car,
-                    color: device.isOnline ? Colors.green : Colors.red,
+                    color: device.isOnline ? AppColors.success : AppColors.danger,
                     size: 28,
                   ),
                 ),
@@ -368,7 +377,7 @@ class HomeController extends GetxController {
                       Text(
                         device.name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -381,8 +390,8 @@ class HomeController extends GetxController {
                             height: 8,
                             decoration: BoxDecoration(
                               color: device.isOnline
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? AppColors.success
+                                  : AppColors.danger,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -390,18 +399,18 @@ class HomeController extends GetxController {
                           Text(
                             device.statusText,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 14,
                             ),
                           ),
                           if (position != null) ...[
                             const SizedBox(width: 12),
-                            Icon(Icons.speed, color: Colors.grey, size: 14),
+                            Icon(Icons.speed, color: AppColors.textSecondary, size: 14),
                             const SizedBox(width: 4),
                             Text(
                               '${position.speedKmh.toStringAsFixed(0)} km/h',
                               style: const TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.textSecondary,
                                 fontSize: 14,
                               ),
                             ),
@@ -421,7 +430,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.navigation,
                     label: 'Navigasi',
-                    color: const Color(0xFF00D4FF),
+                    color: AppColors.primary,
                     onTap: () {
                       Get.back();
                       navigateToVehicle(device);
@@ -433,7 +442,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.my_location,
                     label: 'Fokus',
-                    color: Colors.orange,
+                    color: AppColors.warning,
                     onTap: () {
                       Get.back();
                       selectDevice(device);
@@ -586,13 +595,13 @@ class HomeController extends GetxController {
   void openSOS() {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 28),
             SizedBox(width: 12),
-            Text('Konfirmasi SOS', style: TextStyle(color: Colors.white)),
+            Text('Konfirmasi SOS', style: TextStyle(color: AppColors.textPrimary)),
           ],
         ),
         content: const Text(
@@ -606,10 +615,10 @@ class HomeController extends GetxController {
               Get.back();
               _sendSOS();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text(
               'Kirim SOS',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.textPrimary),
             ),
           ),
         ],
@@ -639,9 +648,9 @@ class HomeController extends GetxController {
   void logout() {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Keluar', style: TextStyle(color: Colors.white)),
+        title: const Text('Keluar', style: TextStyle(color: AppColors.textPrimary)),
         content: const Text(
           'Apakah Anda yakin ingin keluar?',
           style: TextStyle(color: Colors.white70),
@@ -654,8 +663,8 @@ class HomeController extends GetxController {
               await _traccarApi.logout();
               Get.offAllNamed(Routes.login);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Keluar', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Keluar', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -667,8 +676,8 @@ class HomeController extends GetxController {
       'Berhasil',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withValues(alpha: 0.9),
-      colorText: Colors.white,
+      backgroundColor: AppColors.success.withValues(alpha: 0.9),
+      colorText: AppColors.onPrimary,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
     );
@@ -679,8 +688,8 @@ class HomeController extends GetxController {
       'Gagal',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withValues(alpha: 0.9),
-      colorText: Colors.white,
+      backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+      colorText: AppColors.onPrimary,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
     );

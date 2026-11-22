@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/widgets/gradient_button.dart';
+import '../../core/widgets/topan_logo.dart';
 import 'login_controller.dart';
 
 class LoginView extends GetView<LoginController> {
@@ -18,37 +20,16 @@ class LoginView extends GetView<LoginController> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
-                const SizedBox(height: 60),
-                // Logo
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.location_on,
-                    color: AppColors.primary,
-                    size: 48,
-                  ),
-                ),
+                const SizedBox(height: 40),
+                const TopanLogo(size: 150, full: true),
                 const SizedBox(height: 20),
-                // App Name
-                const Text(
-                  'Topan Tracking',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Pantau kendaraanmu secara real-time.',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
+                Text(
+                  'Tahu di mana kendaraan Anda.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.instrumentSerif(
+                    color: AppColors.primaryDark,
+                    fontSize: 24,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -60,17 +41,17 @@ class LoginView extends GetView<LoginController> {
                           padding: const EdgeInsets.all(12),
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
+                            color: AppColors.danger.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.red.withValues(alpha: 0.3),
+                              color: AppColors.danger.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             children: [
                               const Icon(
                                 Icons.error_outline,
-                                color: Colors.red,
+                                color: AppColors.danger,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -78,7 +59,7 @@ class LoginView extends GetView<LoginController> {
                                 child: Text(
                                   controller.errorMessage.value,
                                   style: const TextStyle(
-                                    color: Colors.red,
+                                    color: AppColors.danger,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -97,7 +78,7 @@ class LoginView extends GetView<LoginController> {
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
                   enableSuggestions: false,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: const InputDecoration(
                     hintText: 'Masukkan email kamu...',
                     prefixIcon: Icon(
@@ -153,45 +134,47 @@ class LoginView extends GetView<LoginController> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Server Info
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.cloud_outlined,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Server Topan',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                // Bantuan
+                InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: controller.contactSupport,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.support_agent, color: AppColors.primary, size: 22),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Belum punya akun atau lupa sandi?',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Terhubung ke server topan',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
+                              SizedBox(height: 2),
+                              Text(
+                                'Chat tim Topan lewat WhatsApp',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    ],
+                        Icon(Icons.chevron_right, color: AppColors.textHint),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -209,7 +192,7 @@ class LoginView extends GetView<LoginController> {
       child: Text(
         label,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.textPrimary,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -238,7 +221,7 @@ class _PasswordTextFieldState extends State<_PasswordTextField> {
       textInputAction: TextInputAction.done,
       autocorrect: false,
       enableSuggestions: false,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       onSubmitted: (_) => widget.controller.login(),
       decoration: InputDecoration(
         hintText: '••••••••',

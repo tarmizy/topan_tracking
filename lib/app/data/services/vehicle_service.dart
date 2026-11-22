@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/traccar_models.dart';
@@ -27,6 +28,13 @@ class VehicleService extends GetxService {
   void onInit() {
     super.onInit();
     _traccarApi = Get.find<TraccarApiService>();
+
+    // Segarkan notifikasi setiap 60 detik selama aplikasi terbuka.
+    _eventsTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (_traccarApi.isConnected.value && selectedDevice.value != null) {
+        loadEvents();
+      }
+    });
 
     // Listen to device updates from WebSocket
     ever(_traccarApi.devices, (devices) {
@@ -177,7 +185,7 @@ class VehicleService extends GetxService {
               (e) => NotificationItem(
                 id: e.id.toString(),
                 title: e.eventTitle,
-                message: '${e.eventIcon} ${e.eventTitle}',
+                message: _eventMessage(e),
                 type: _getEventType(e.type),
                 timestamp: e.eventTime,
               ),
@@ -190,6 +198,22 @@ class VehicleService extends GetxService {
     } catch (e) {
       debugPrint('Error loading events: $e');
     }
+  }
+
+  /// Keterangan notifikasi: nama kendaraan + detail yang relevan.
+  String _eventMessage(TraccarEvent e) {
+    final device = _traccarApi.devices.firstWhereOrNull((d) => d.id == e.deviceId);
+    final name = device?.name ?? selectedDevice.value?.name ?? 'Kendaraan';
+    final speed = e.attributes?['speed'];
+    if (speed is num) {
+      return '$name · ${(speed * 1.852).round()} km/jam';
+    }
+    final geofenceId = e.geofenceId;
+    if (geofenceId != null) {
+      final zone = _traccarApi.geofences.firstWhereOrNull((g) => g.id == geofenceId);
+      if (zone != null) return '$name · ${zone.name}';
+    }
+    return name;
   }
 
   String _getEventType(String eventType) {
@@ -338,6 +362,14 @@ class VehicleService extends GetxService {
       notifications.where((n) => !n.isRead).length;
 
   // ==================== CLEANUP ====================
+
+  Timer? _eventsTimer;
+
+  @override
+  void onClose() {
+    _eventsTimer?.cancel();
+    super.onClose();
+  }
 
   void disconnect() {
     _traccarApi.disconnectWebSocket();

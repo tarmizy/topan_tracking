@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/models/traccar_models.dart';
 import 'drivers_controller.dart';
@@ -9,9 +10,9 @@ class DriversView extends GetView<DriversController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text('Pengemudi'),
         actions: [
           IconButton(
@@ -22,8 +23,8 @@ class DriversView extends GetView<DriversController> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: controller.showAddDriverDialog,
-        backgroundColor: const Color(0xFF00D4FF),
-        child: const Icon(Icons.add, color: Colors.black),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.onPrimary),
       ),
       body: Column(
         children: [
@@ -48,7 +49,7 @@ class DriversView extends GetView<DriversController> {
                       icon: Icons.people,
                       label: 'Total',
                       value: '${controller.drivers.length}',
-                      color: const Color(0xFF00D4FF),
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -57,7 +58,7 @@ class DriversView extends GetView<DriversController> {
                       icon: Icons.check_circle,
                       label: 'Aktif',
                       value: '$activeDrivers',
-                      color: Colors.green,
+                      color: AppColors.success,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -66,7 +67,7 @@ class DriversView extends GetView<DriversController> {
                       icon: Icons.attach_money,
                       label: 'Total Sewa',
                       value: 'Rp ${_formatNumber(totalRental)}',
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       isSmallText: true,
                     ),
                   ),
@@ -80,13 +81,13 @@ class DriversView extends GetView<DriversController> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               onChanged: (value) => controller.searchQuery.value = value,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Cari pengemudi...',
-                hintStyle: const TextStyle(color: Colors.grey),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                hintStyle: const TextStyle(color: AppColors.textSecondary),
+                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
                 filled: true,
-                fillColor: const Color(0xFF1A1A1A),
+                fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -101,7 +102,7 @@ class DriversView extends GetView<DriversController> {
             child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF00D4FF)),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 );
               }
 
@@ -115,12 +116,12 @@ class DriversView extends GetView<DriversController> {
                       Icon(
                         Icons.person_off,
                         size: 64,
-                        color: Colors.grey.shade700,
+                        color: AppColors.textHint,
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Belum ada pengemudi',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       TextButton.icon(
@@ -193,7 +194,7 @@ class _SummaryCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
         ],
       ),
     );
@@ -214,10 +215,10 @@ class _DriverCard extends GetView<DriversController> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: driver.isActive
-              ? Border.all(color: Colors.green.withValues(alpha: 0.5))
+              ? Border.all(color: AppColors.success.withValues(alpha: 0.5))
               : null,
         ),
         child: Row(
@@ -228,14 +229,14 @@ class _DriverCard extends GetView<DriversController> {
                 CircleAvatar(
                   radius: 25,
                   backgroundColor: driver.isActive
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.primary.withValues(alpha: 0.2),
                   child: Text(
                     driver.name.isNotEmpty ? driver.name[0].toUpperCase() : '?',
                     style: TextStyle(
                       color: driver.isActive
-                          ? Colors.green
-                          : const Color(0xFF00D4FF),
+                          ? AppColors.success
+                          : AppColors.primary,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -249,10 +250,10 @@ class _DriverCard extends GetView<DriversController> {
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: Colors.green,
+                        color: AppColors.success,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF1A1A1A),
+                          color: AppColors.surface,
                           width: 2,
                         ),
                       ),
@@ -268,7 +269,7 @@ class _DriverCard extends GetView<DriversController> {
                   Text(
                     driver.name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -279,14 +280,14 @@ class _DriverCard extends GetView<DriversController> {
                       const Icon(
                         Icons.directions_car,
                         size: 12,
-                        color: Colors.grey,
+                        color: AppColors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           controller.getDeviceName(driver.deviceId),
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -299,7 +300,7 @@ class _DriverCard extends GetView<DriversController> {
                     Text(
                       'Rp ${_formatNumber(totalRental)}',
                       style: const TextStyle(
-                        color: Colors.orange,
+                        color: AppColors.warning,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -318,14 +319,14 @@ class _DriverCard extends GetView<DriversController> {
                   ),
                   decoration: BoxDecoration(
                     color: driver.isActive
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.grey.withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.textSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     driver.isActive ? 'Aktif' : 'Nonaktif',
                     style: TextStyle(
-                      color: driver.isActive ? Colors.green : Colors.grey,
+                      color: driver.isActive ? AppColors.success : AppColors.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -334,7 +335,7 @@ class _DriverCard extends GetView<DriversController> {
                 const SizedBox(height: 4),
                 Text(
                   'Rp ${_formatNumber(driver.dailyRate)}/hari',
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
                 ),
               ],
             ),

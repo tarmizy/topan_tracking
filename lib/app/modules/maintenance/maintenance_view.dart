@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'maintenance_controller.dart';
 
@@ -8,9 +9,9 @@ class MaintenanceView extends GetView<MaintenanceController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text('Pengingat Servis'),
         actions: [
           IconButton(
@@ -21,8 +22,8 @@ class MaintenanceView extends GetView<MaintenanceController> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: controller.showAddMaintenanceDialog,
-        backgroundColor: const Color(0xFF00D4FF),
-        child: const Icon(Icons.add, color: Colors.black),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.onPrimary),
       ),
       body: Column(
         children: [
@@ -34,7 +35,7 @@ class MaintenanceView extends GetView<MaintenanceController> {
             child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF00D4FF)),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 );
               }
 
@@ -48,12 +49,12 @@ class MaintenanceView extends GetView<MaintenanceController> {
                       Icon(
                         Icons.build_circle_outlined,
                         size: 64,
-                        color: Colors.grey.shade700,
+                        color: AppColors.textHint,
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Belum ada pengingat servis',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       TextButton.icon(
@@ -83,7 +84,7 @@ class MaintenanceView extends GetView<MaintenanceController> {
   Widget _buildFilterTabs() {
     return Container(
       height: 50,
-      color: const Color(0xFF1A1A1A),
+      color: AppColors.surface,
       child: Obx(
         () => ListView(
           scrollDirection: Axis.horizontal,
@@ -107,14 +108,14 @@ class MaintenanceView extends GetView<MaintenanceController> {
         margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00D4FF) : const Color(0xFF0A0A0A),
+          color: isSelected ? AppColors.primary : AppColors.background,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.black : Colors.grey,
+              color: isSelected ? AppColors.onPrimary : AppColors.textSecondary,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
@@ -138,7 +139,7 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
       ),
@@ -171,7 +172,7 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
                       Text(
                         item.name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -179,7 +180,7 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
                       Text(
                         controller.getDeviceName(item.deviceId),
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                           fontSize: 12,
                         ),
                       ),
@@ -233,8 +234,8 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
                         icon: const Icon(Icons.delete_outline, size: 18),
                         label: const Text('Hapus'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: AppColors.danger,
+                          side: const BorderSide(color: AppColors.danger),
                         ),
                       ),
                     ),
@@ -247,15 +248,15 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
                         icon: const Icon(
                           Icons.check,
                           size: 18,
-                          color: Colors.black,
+                          color: AppColors.onPrimary,
                         ),
                         label: const Text(
                           'Selesai',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: AppColors.onPrimary),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00D4FF),
-                          disabledBackgroundColor: Colors.grey.shade800,
+                          backgroundColor: AppColors.primary,
+                          disabledBackgroundColor: AppColors.border,
                         ),
                       ),
                     ),
@@ -273,18 +274,18 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey),
+          Icon(icon, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: const TextStyle(color: Colors.grey, fontSize: 11),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
               ),
               Text(
                 value,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
               ),
             ],
           ),
@@ -296,11 +297,11 @@ class _MaintenanceCard extends GetView<MaintenanceController> {
   Color _getStatusColor() {
     switch (item.status) {
       case MaintenanceStatus.overdue:
-        return Colors.red;
+        return AppColors.danger;
       case MaintenanceStatus.upcoming:
-        return Colors.orange;
+        return AppColors.warning;
       case MaintenanceStatus.completed:
-        return Colors.green;
+        return AppColors.success;
     }
   }
 

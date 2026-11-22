@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/services/vehicle_service.dart';
@@ -62,11 +63,11 @@ class MaintenanceController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Tambah Pengingat Servis',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -76,14 +77,14 @@ class MaintenanceController extends GetxController {
               // Device selector
               const Text(
                 'Kendaraan',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
               const SizedBox(height: 8),
               Obx(
                 () => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A0A0A),
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -91,16 +92,16 @@ class MaintenanceController extends GetxController {
                       value: selectedDevice.value,
                       hint: const Text(
                         'Pilih Kendaraan',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
-                      dropdownColor: const Color(0xFF1A1A1A),
+                      dropdownColor: AppColors.surface,
                       isExpanded: true,
                       items: devices.map((device) {
                         return DropdownMenuItem(
                           value: device,
                           child: Text(
                             device.name,
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.textPrimary),
                           ),
                         );
                       }).toList(),
@@ -122,7 +123,7 @@ class MaintenanceController extends GetxController {
               // Type selector
               const Text(
                 'Tipe Pengingat',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
               const SizedBox(height: 8),
               Obx(
@@ -190,8 +191,8 @@ class MaintenanceController extends GetxController {
                   'Error',
                   'Lengkapi semua field',
                   snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.danger,
+                  colorText: AppColors.onPrimary,
                 );
                 return;
               }
@@ -206,9 +207,9 @@ class MaintenanceController extends GetxController {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -224,14 +225,14 @@ class MaintenanceController extends GetxController {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: const TextStyle(color: Colors.grey),
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         filled: true,
-        fillColor: const Color(0xFF0A0A0A),
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -252,11 +253,11 @@ class MaintenanceController extends GetxController {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF00D4FF).withValues(alpha: 0.2)
-              : const Color(0xFF0A0A0A),
+              ? AppColors.primary.withValues(alpha: 0.2)
+              : AppColors.background,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00D4FF) : Colors.transparent,
+            color: isSelected ? AppColors.primary : Colors.transparent,
           ),
         ),
         child: Row(
@@ -265,13 +266,13 @@ class MaintenanceController extends GetxController {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? const Color(0xFF00D4FF) : Colors.grey,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF00D4FF) : Colors.grey,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -305,16 +306,16 @@ class MaintenanceController extends GetxController {
         'Berhasil',
         'Pengingat servis berhasil ditambahkan',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal menambahkan pengingat',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -323,14 +324,14 @@ class MaintenanceController extends GetxController {
   Future<void> deleteMaintenance(int id) async {
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text(
           'Hapus Pengingat',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: const Text(
           'Yakin ingin menghapus pengingat ini?',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -339,8 +340,8 @@ class MaintenanceController extends GetxController {
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -355,8 +356,8 @@ class MaintenanceController extends GetxController {
           'Berhasil',
           'Pengingat berhasil dihapus',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+          backgroundColor: AppColors.success,
+          colorText: AppColors.onPrimary,
         );
       }
       isLoading.value = false;
@@ -377,8 +378,8 @@ class MaintenanceController extends GetxController {
         'Berhasil',
         'Servis ditandai selesai',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/vehicle_service.dart';
@@ -130,8 +131,8 @@ class GeofenceController extends GetxController {
         'Berhasil',
         'Zona "${zoneName.value}" berhasil disimpan dengan radius $radiusText',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.9),
-        colorText: Colors.white,
+        backgroundColor: AppColors.success.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
         margin: const EdgeInsets.all(16),
       );
 
@@ -146,8 +147,8 @@ class GeofenceController extends GetxController {
         'Gagal',
         'Gagal menyimpan zona. Coba lagi.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
         margin: const EdgeInsets.all(16),
       );
     }
@@ -159,17 +160,17 @@ class GeofenceController extends GetxController {
     final textController = TextEditingController();
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Nama Zona', style: TextStyle(color: Colors.white)),
+        title: const Text('Nama Zona', style: TextStyle(color: AppColors.textPrimary)),
         content: TextField(
           controller: textController,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'Contoh: Rumah, Kantor',
-            hintStyle: const TextStyle(color: Colors.grey),
+            hintStyle: const TextStyle(color: AppColors.textSecondary),
             filled: true,
-            fillColor: const Color(0xFF2A2A2A),
+            fillColor: AppColors.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -200,7 +201,7 @@ class GeofenceController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -212,7 +213,7 @@ class GeofenceController extends GetxController {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -223,12 +224,12 @@ class GeofenceController extends GetxController {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.fence,
-                    color: Color(0xFF00D4FF),
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -240,7 +241,7 @@ class GeofenceController extends GetxController {
                       Text(
                         zone.name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -249,7 +250,7 @@ class GeofenceController extends GetxController {
                         Text(
                           zone.description!,
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -261,7 +262,7 @@ class GeofenceController extends GetxController {
             const SizedBox(height: 20),
             const Text(
               'Kendaraan Terhubung:',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 8),
             if (linkedDevices.isEmpty)
@@ -280,7 +281,7 @@ class GeofenceController extends GetxController {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -289,13 +290,13 @@ class GeofenceController extends GetxController {
                         Icon(
                           Icons.directions_car,
                           size: 14,
-                          color: device.isOnline ? Colors.green : Colors.grey,
+                          color: device.isOnline ? AppColors.success : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           device.name,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 12,
                           ),
                         ),
@@ -313,13 +314,13 @@ class GeofenceController extends GetxController {
                       Get.back();
                       deleteZone(zone.id!);
                     },
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: const Icon(Icons.delete, color: AppColors.danger),
                     label: const Text(
                       'Hapus',
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(color: AppColors.danger),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side: const BorderSide(color: AppColors.danger),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -331,13 +332,13 @@ class GeofenceController extends GetxController {
                       Get.back();
                       _showEditDevicesDialog(zone);
                     },
-                    icon: const Icon(Icons.edit, color: Colors.black),
+                    icon: const Icon(Icons.edit, color: AppColors.onPrimary),
                     label: const Text(
                       'Edit Kendaraan',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: AppColors.onPrimary),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D4FF),
+                      backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -356,11 +357,11 @@ class GeofenceController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Kendaraan untuk ${zone.name}',
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.textPrimary),
         ),
         content: SizedBox(
           width: double.maxFinite,
@@ -382,17 +383,17 @@ class GeofenceController extends GetxController {
                   },
                   title: Text(
                     device.name,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                   subtitle: Text(
                     device.isOnline ? 'Online' : 'Offline',
                     style: TextStyle(
-                      color: device.isOnline ? Colors.green : Colors.grey,
+                      color: device.isOnline ? AppColors.success : AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
-                  activeColor: const Color(0xFF00D4FF),
-                  checkColor: Colors.black,
+                  activeColor: AppColors.primary,
+                  checkColor: AppColors.onPrimary,
                 );
               },
             ),
@@ -410,9 +411,9 @@ class GeofenceController extends GetxController {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -447,17 +448,17 @@ class GeofenceController extends GetxController {
       'Berhasil',
       'Kendaraan berhasil diperbarui',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withValues(alpha: 0.9),
-      colorText: Colors.white,
+      backgroundColor: AppColors.success.withValues(alpha: 0.9),
+      colorText: AppColors.onPrimary,
     );
   }
 
   void deleteZone(int id) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hapus Zona', style: TextStyle(color: Colors.white)),
+        title: const Text('Hapus Zona', style: TextStyle(color: AppColors.textPrimary)),
         content: const Text(
           'Apakah Anda yakin ingin menghapus zona ini?',
           style: TextStyle(color: Colors.white70),
@@ -474,75 +475,14 @@ class GeofenceController extends GetxController {
                   'Berhasil',
                   'Zona berhasil dihapus',
                   snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.green.withValues(alpha: 0.9),
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.success.withValues(alpha: 0.9),
+                  colorText: AppColors.onPrimary,
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.textPrimary)),
           ),
-        ],
-      ),
-    );
-  }
-
-  void simulateExitZone() {
-    isOutsideZone.value = true;
-    if (isExitAlertEnabled.value) {
-      _showAlert(
-        'Peringatan!',
-        'Kendaraan keluar dari zona aman!',
-        isExit: true,
-      );
-    }
-  }
-
-  void simulateEnterZone() {
-    isOutsideZone.value = false;
-    if (isEnterAlertEnabled.value) {
-      _showAlert('Info', 'Kendaraan masuk ke zona aman', isExit: false);
-    }
-  }
-
-  void _showAlert(String title, String message, {required bool isExit}) {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (isExit ? Colors.red : Colors.green).withValues(
-                  alpha: 0.2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                isExit
-                    ? Icons.warning_amber_rounded
-                    : Icons.check_circle_outline,
-                color: isExit ? Colors.red : Colors.green,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: isExit ? Colors.red : Colors.green,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(message, style: const TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
         ],
       ),
     );

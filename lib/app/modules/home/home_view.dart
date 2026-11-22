@@ -137,7 +137,7 @@ class _NotifikasiTab extends GetView<HomeController> {
                   const Text(
                     'Notifikasi',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -172,7 +172,7 @@ class _NotifikasiTab extends GetView<HomeController> {
                             Icon(
                               Icons.notifications_off_outlined,
                               size: 64,
-                              color: Colors.grey.shade700,
+                              color: AppColors.textHint,
                             ),
                             const SizedBox(height: 16),
                             const Text(
@@ -245,7 +245,7 @@ class _NotificationItem extends StatelessWidget {
                 Text(
                   notification.title,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: notification.isRead
                         ? FontWeight.normal
                         : FontWeight.bold,
@@ -304,15 +304,15 @@ class _NotificationItem extends StatelessWidget {
   Color _getNotificationColor(String type) {
     switch (type) {
       case 'geofence_enter':
-        return Colors.green;
+        return AppColors.success;
       case 'geofence_exit':
-        return Colors.red;
+        return AppColors.danger;
       case 'speed':
-        return Colors.orange;
+        return AppColors.warning;
       case 'engine':
         return Colors.blue;
       case 'sos':
-        return Colors.red;
+        return AppColors.danger;
       default:
         return AppColors.primary;
     }
@@ -352,7 +352,7 @@ class _BerandaTab extends GetView<HomeController> {
         Obx(
           () => controller.isLoading.value
               ? Container(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: AppColors.shadow,
                   child: const Center(child: CircularProgressIndicator()),
                 )
               : const SizedBox(),
@@ -473,7 +473,7 @@ class _VehicleMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     final markerColor = isSelected
         ? AppColors.primary
-        : (device.isOnline ? Colors.green : Colors.red);
+        : (device.isOnline ? AppColors.success : AppColors.danger);
 
     return GestureDetector(
       onTap: () => Get.find<HomeController>().showVehicleOptions(device),
@@ -492,14 +492,14 @@ class _VehicleMarker extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: AppColors.shadow,
                       blurRadius: 4,
                     ),
                   ],
                 ),
                 child: Icon(
                   _getDeviceIcon(device.category),
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   size: 16,
                 ),
               ),
@@ -554,12 +554,12 @@ class _MapControlButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppColors.shadow,
               blurRadius: 8,
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: AppColors.textPrimary, size: 20),
       ),
     );
   }
@@ -579,7 +579,7 @@ class _VehicleSelector extends GetView<HomeController> {
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: AppColors.shadow,
                 blurRadius: 8,
               ),
             ],
@@ -607,7 +607,7 @@ class _VehicleSelector extends GetView<HomeController> {
                       controller.selectedDevice.value?.name ??
                           'Pilih Kendaraan',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -659,7 +659,7 @@ class _VehicleSelector extends GetView<HomeController> {
             const Text(
               'Pilih Kendaraan',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -733,7 +733,7 @@ class _VehicleListItem extends GetView<HomeController> {
                     Text(
                       device.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -751,14 +751,14 @@ class _VehicleListItem extends GetView<HomeController> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: device.isOnline
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.2),
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.danger.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   device.statusText,
                   style: TextStyle(
-                    color: device.isOnline ? Colors.green : Colors.red,
+                    color: device.isOnline ? AppColors.success : AppColors.danger,
                     fontSize: 11,
                   ),
                 ),
@@ -796,8 +796,8 @@ class _VehicleInfoCard extends StatelessWidget {
     final battery = position?.batteryLevel;
     final ignition = position?.ignitionStatus;
     final ignitionColor = switch (ignition) {
-      true => Colors.green,
-      false => Colors.red,
+      true => AppColors.success,
+      false => AppColors.danger,
       null => AppColors.textSecondary,
     };
 
@@ -828,7 +828,7 @@ class _VehicleInfoCard extends StatelessWidget {
                     Text(
                       device!.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -840,7 +840,7 @@ class _VehicleInfoCard extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: device!.isOnline ? Colors.green : Colors.red,
+                            color: device!.isOnline ? AppColors.success : AppColors.danger,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -886,10 +886,10 @@ class _VehicleInfoCard extends StatelessWidget {
                   value: '$battery',
                   unit: '%',
                   valueColor: battery > 60
-                      ? Colors.green
+                      ? AppColors.success
                       : battery > 30
-                      ? Colors.orange
-                      : Colors.red,
+                      ? AppColors.warning
+                      : AppColors.danger,
                 ),
             ],
           ),
@@ -920,7 +920,7 @@ class _InfoItem extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: valueColor ?? Colors.white,
+            color: valueColor ?? AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -949,7 +949,7 @@ class _PerintahTab extends GetView<HomeController> {
           const Text(
             'Pusat Kendali',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -995,8 +995,8 @@ class _EngineControlCard extends GetView<HomeController> {
       final ignition = controller.ignitionStatus;
       final isSending = controller.isCommandLoading.value;
       final (status, color, icon) = switch (ignition) {
-        true => ('Kontak aktif', Colors.green, Icons.power),
-        false => ('Kontak mati', Colors.red, Icons.power_off),
+        true => ('Kontak aktif', AppColors.success, Icons.power),
+        false => ('Kontak mati', AppColors.danger, Icons.power_off),
         null => (
           'Status kontak belum tersedia',
           AppColors.textSecondary,
@@ -1121,7 +1121,7 @@ class _CommandCard extends StatelessWidget {
                         Text(
                           title,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1153,7 +1153,7 @@ class _CommandCard extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1182,7 +1182,7 @@ class _CommandHistorySection extends GetView<HomeController> {
         const Text(
           'Riwayat Perintah',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -1234,13 +1234,13 @@ class _CommandHistoryItemWidget extends GetView<HomeController> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: command.isSuccess
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+                  ? AppColors.success.withValues(alpha: 0.2)
+                  : AppColors.danger.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               command.isSuccess ? Icons.check : Icons.close,
-              color: command.isSuccess ? Colors.green : Colors.red,
+              color: command.isSuccess ? AppColors.success : AppColors.danger,
               size: 16,
             ),
           ),
@@ -1252,7 +1252,7 @@ class _CommandHistoryItemWidget extends GetView<HomeController> {
                 Text(
                   command.command,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w500,
                     fontSize: 13,
                   ),
@@ -1335,7 +1335,7 @@ class _AkunTab extends GetView<HomeController> {
                 Text(
                   traccarApi.currentUser?.name ?? 'Pengguna',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1429,11 +1429,11 @@ class _AkunTab extends GetView<HomeController> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: controller.logout,
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text('Keluar', style: TextStyle(color: Colors.red)),
+              icon: const Icon(Icons.logout, color: AppColors.danger),
+              label: const Text('Keluar', style: TextStyle(color: AppColors.danger)),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: Colors.red),
+                side: const BorderSide(color: AppColors.danger),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1481,7 +1481,7 @@ class _AkunTab extends GetView<HomeController> {
                   const Text(
                     'Ubah Password',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1494,7 +1494,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: currentPasswordController,
                   obscureText: obscureCurrent.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Password Saat Ini',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1523,7 +1523,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: newPasswordController,
                   obscureText: obscureNew.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Password Baru',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1551,7 +1551,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: confirmPasswordController,
                   obscureText: obscureConfirm.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Konfirmasi Password Baru',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1588,8 +1588,8 @@ class _AkunTab extends GetView<HomeController> {
                               Get.snackbar(
                                 'Error',
                                 'Password baru tidak cocok',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
                               );
                               return;
                             }
@@ -1597,21 +1597,34 @@ class _AkunTab extends GetView<HomeController> {
                               Get.snackbar(
                                 'Error',
                                 'Password minimal 6 karakter',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
                               );
                               return;
                             }
                             isLoading.value = true;
-                            // Simulate API call
-                            await Future.delayed(const Duration(seconds: 2));
+                            final result = await Get.find<TraccarApiService>()
+                                .changePassword(
+                                  currentPassword:
+                                      currentPasswordController.text,
+                                  newPassword: newPasswordController.text,
+                                );
                             isLoading.value = false;
+                            if (!result.success) {
+                              Get.snackbar(
+                                'Gagal',
+                                result.error ?? 'Gagal mengganti password',
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
+                              );
+                              return;
+                            }
                             Get.back();
                             Get.snackbar(
                               'Berhasil',
                               'Password berhasil diubah',
-                              backgroundColor: Colors.green,
-                              colorText: Colors.white,
+                              backgroundColor: AppColors.success,
+                              colorText: AppColors.onPrimary,
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -1627,13 +1640,13 @@ class _AkunTab extends GetView<HomeController> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.black,
+                              color: AppColors.onPrimary,
                             ),
                           )
                         : const Text(
                             'Simpan Password',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: AppColors.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1679,7 +1692,7 @@ class _AkunTab extends GetView<HomeController> {
                   const Text(
                     'Bantuan',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1797,7 +1810,7 @@ class _AkunTab extends GetView<HomeController> {
             const Text(
               'Topan Tracking',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -1868,7 +1881,7 @@ class _FaqItem extends StatelessWidget {
         title: Text(
           question,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -1927,7 +1940,7 @@ class _ContactItem extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 ),
               ],
             ),
@@ -2033,7 +2046,7 @@ class _MenuItem extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

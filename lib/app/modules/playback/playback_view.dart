@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -12,7 +13,7 @@ class PlaybackView extends GetView<PlaybackController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header & Selector
@@ -34,7 +35,7 @@ class PlaybackView extends GetView<PlaybackController> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: const Color(0xFF0A0A0A),
+      color: AppColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -44,7 +45,7 @@ class PlaybackView extends GetView<PlaybackController> {
                 child: Text(
                   'Playback Rute',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -53,7 +54,7 @@ class PlaybackView extends GetView<PlaybackController> {
               Obx(
                 () => PopupMenuButton<MapProvider>(
                   tooltip: 'Pilih Peta',
-                  icon: const Icon(Icons.layers, color: Colors.white),
+                  icon: const Icon(Icons.layers, color: AppColors.textPrimary),
                   initialValue: controller.selectedMapProvider.value,
                   onSelected: (provider) =>
                       controller.selectedMapProvider.value = provider,
@@ -75,10 +76,10 @@ class PlaybackView extends GetView<PlaybackController> {
             () => Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF00D4FF).withValues(alpha: 0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                 ),
               ),
               child: DropdownButtonHideUnderline(
@@ -86,19 +87,19 @@ class PlaybackView extends GetView<PlaybackController> {
                   value: controller.selectedDevice.value,
                   hint: const Row(
                     children: [
-                      Icon(Icons.directions_car, color: Colors.grey, size: 20),
+                      Icon(Icons.directions_car, color: AppColors.textSecondary, size: 20),
                       SizedBox(width: 12),
                       Text(
                         'Pilih Kendaraan',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
-                  dropdownColor: const Color(0xFF1A1A1A),
+                  dropdownColor: AppColors.surface,
                   isExpanded: true,
                   icon: const Icon(
                     Icons.keyboard_arrow_down,
-                    color: Color(0xFF00D4FF),
+                    color: AppColors.primary,
                   ),
                   items: controller.devices.map((device) {
                     return DropdownMenuItem(
@@ -107,14 +108,14 @@ class PlaybackView extends GetView<PlaybackController> {
                         children: [
                           Icon(
                             Icons.directions_car,
-                            color: device.isOnline ? Colors.green : Colors.grey,
+                            color: device.isOnline ? AppColors.success : AppColors.textSecondary,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               device.name,
-                              style: const TextStyle(color: Colors.white),
+                              style: const TextStyle(color: AppColors.textPrimary),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -138,10 +139,10 @@ class PlaybackView extends GetView<PlaybackController> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF00D4FF).withValues(alpha: 0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -149,12 +150,12 @@ class PlaybackView extends GetView<PlaybackController> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
                         Icons.calendar_month,
-                        color: Color(0xFF00D4FF),
+                        color: AppColors.primary,
                         size: 20,
                       ),
                     ),
@@ -165,7 +166,7 @@ class PlaybackView extends GetView<PlaybackController> {
                         children: [
                           const Text(
                             'Rentang Tanggal',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -174,14 +175,14 @@ class PlaybackView extends GetView<PlaybackController> {
                                 ? '${_formatDate(controller.startDate.value!)} - ${_formatDate(controller.endDate.value!)}'
                                 : 'Pilih tanggal',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.grey),
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary),
                   ],
                 ),
               ),
@@ -205,20 +206,20 @@ class PlaybackView extends GetView<PlaybackController> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black,
+                          color: AppColors.onPrimary,
                         ),
                       )
-                    : const Icon(Icons.search, color: Colors.black),
+                    : const Icon(Icons.search, color: AppColors.onPrimary),
                 label: Text(
                   controller.isLoading.value ? 'Memuat...' : 'Muat Rute',
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: AppColors.onPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00D4FF),
-                  disabledBackgroundColor: Colors.grey.shade800,
+                  backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.border,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -240,18 +241,18 @@ class PlaybackView extends GetView<PlaybackController> {
     return Obx(() {
       if (controller.routePositions.isEmpty && !controller.isLoading.value) {
         return Container(
-          color: const Color(0xFF1A1A1A),
+          color: AppColors.surface,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.map_outlined, size: 64, color: Colors.grey.shade700),
+                Icon(Icons.map_outlined, size: 64, color: AppColors.textHint),
                 const SizedBox(height: 16),
                 Text(
                   controller.routeMessage.value ??
                       'Pilih kendaraan dan tanggal\nkemudian tekan "Muat Rute"',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                 ),
               ],
             ),
@@ -283,7 +284,7 @@ class PlaybackView extends GetView<PlaybackController> {
               polylines: [
                 Polyline(
                   points: controller.routePoints,
-                  color: const Color(0xFF00D4FF).withValues(alpha: 0.5),
+                  color: AppColors.primary.withValues(alpha: 0.5),
                   strokeWidth: 4,
                 ),
                 // Traveled portion
@@ -293,7 +294,7 @@ class PlaybackView extends GetView<PlaybackController> {
                       0,
                       controller.currentIndex.value + 1,
                     ),
-                    color: const Color(0xFF00D4FF),
+                    color: AppColors.primary,
                     strokeWidth: 5,
                   ),
               ],
@@ -309,8 +310,8 @@ class PlaybackView extends GetView<PlaybackController> {
                   point: LatLng(position.latitude, position.longitude),
                   radius: accuracy,
                   useRadiusInMeter: true,
-                  color: const Color(0x3300D4FF),
-                  borderColor: const Color(0x6600D4FF),
+                  color: const Color(0x33C8952F),
+                  borderColor: const Color(0x66C8952F),
                   borderStrokeWidth: 1,
                 ),
               ],
@@ -326,13 +327,13 @@ class PlaybackView extends GetView<PlaybackController> {
                   height: 40,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppColors.success,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: AppColors.textPrimary, width: 2),
                     ),
                     child: const Icon(
                       Icons.play_arrow,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -345,13 +346,13 @@ class PlaybackView extends GetView<PlaybackController> {
                   height: 40,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.danger,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: AppColors.textPrimary, width: 2),
                     ),
                     child: const Icon(
                       Icons.stop,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -382,18 +383,18 @@ class PlaybackView extends GetView<PlaybackController> {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF00D4FF),
+            color: AppColors.primary,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
+            border: Border.all(color: AppColors.textPrimary, width: 2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00D4FF).withValues(alpha: 0.5),
+                color: AppColors.primary.withValues(alpha: 0.5),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
             ],
           ),
-          child: const Icon(Icons.navigation, color: Colors.white, size: 20),
+          child: const Icon(Icons.navigation, color: AppColors.textPrimary, size: 20),
         ),
       );
     });
@@ -407,7 +408,7 @@ class PlaybackView extends GetView<PlaybackController> {
 
       return Container(
         padding: const EdgeInsets.all(12),
-        color: const Color(0xFF1A1A1A),
+        color: AppColors.surface,
         child: Column(
           children: [
             // Current position info
@@ -416,7 +417,7 @@ class PlaybackView extends GetView<PlaybackController> {
                 padding: const EdgeInsets.all(10),
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -424,12 +425,12 @@ class PlaybackView extends GetView<PlaybackController> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         Icons.access_time,
-                        color: Color(0xFF00D4FF),
+                        color: AppColors.primary,
                         size: 16,
                       ),
                     ),
@@ -439,7 +440,7 @@ class PlaybackView extends GetView<PlaybackController> {
                         controller.currentPosition.value!.fixTime.toLocal(),
                       ),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -450,21 +451,21 @@ class PlaybackView extends GetView<PlaybackController> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.2),
+                        color: AppColors.warning.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.speed,
-                            color: Colors.orange,
+                            color: AppColors.warning,
                             size: 14,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${controller.currentPosition.value!.speedKmh.toStringAsFixed(0)} km/h',
                             style: const TextStyle(
-                              color: Colors.orange,
+                              color: AppColors.warning,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -475,7 +476,7 @@ class PlaybackView extends GetView<PlaybackController> {
                     const Spacer(),
                     Text(
                       '${controller.currentIndex.value + 1} / ${controller.routePositions.length}',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -518,24 +519,24 @@ class PlaybackView extends GetView<PlaybackController> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0A0A),
+          color: AppColors.background,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF00D4FF), size: 18),
+            Icon(icon, color: AppColors.primary, size: 18),
             const SizedBox(height: 4),
             Text(
               value,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
             ),
             Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
             ),
           ],
         ),
@@ -552,7 +553,7 @@ class PlaybackView extends GetView<PlaybackController> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -562,10 +563,10 @@ class PlaybackView extends GetView<PlaybackController> {
               // Progress slider
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: const Color(0xFF00D4FF),
-                  inactiveTrackColor: Colors.grey.shade800,
-                  thumbColor: const Color(0xFF00D4FF),
-                  overlayColor: const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                  activeTrackColor: AppColors.primary,
+                  inactiveTrackColor: AppColors.border,
+                  thumbColor: AppColors.primary,
+                  overlayColor: AppColors.primary.withValues(alpha: 0.2),
                   trackHeight: 4,
                 ),
                 child: Slider(
@@ -585,42 +586,42 @@ class PlaybackView extends GetView<PlaybackController> {
                 children: [
                   // Speed selector
                   PopupMenuButton<double>(
-                    color: const Color(0xFF1A1A1A),
+                    color: AppColors.surface,
                     onSelected: controller.setPlaybackSpeed,
                     itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 0.5,
                         child: Text(
                           '0.5x',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                       const PopupMenuItem(
                         value: 1.0,
                         child: Text(
                           '1x',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                       const PopupMenuItem(
                         value: 2.0,
                         child: Text(
                           '2x',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                       const PopupMenuItem(
                         value: 5.0,
                         child: Text(
                           '5x',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                       const PopupMenuItem(
                         value: 10.0,
                         child: Text(
                           '10x',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.textPrimary),
                         ),
                       ),
                     ],
@@ -630,13 +631,13 @@ class PlaybackView extends GetView<PlaybackController> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0A0A0A),
+                        color: AppColors.background,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '${controller.playbackSpeed.value}x',
                         style: const TextStyle(
-                          color: Color(0xFF00D4FF),
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -648,9 +649,9 @@ class PlaybackView extends GetView<PlaybackController> {
                   // Stop button
                   IconButton(
                     onPressed: controller.stopPlayback,
-                    icon: const Icon(Icons.stop, color: Colors.white),
+                    icon: const Icon(Icons.stop, color: AppColors.textPrimary),
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF0A0A0A),
+                      backgroundColor: AppColors.background,
                       padding: const EdgeInsets.all(12),
                     ),
                   ),
@@ -664,11 +665,11 @@ class PlaybackView extends GetView<PlaybackController> {
                       controller.isPlaying.value
                           ? Icons.pause
                           : Icons.play_arrow,
-                      color: Colors.black,
+                      color: AppColors.onPrimary,
                       size: 32,
                     ),
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D4FF),
+                      backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.all(16),
                     ),
                   ),
@@ -690,9 +691,9 @@ class PlaybackView extends GetView<PlaybackController> {
                         );
                       }
                     },
-                    icon: const Icon(Icons.fit_screen, color: Colors.white),
+                    icon: const Icon(Icons.fit_screen, color: AppColors.textPrimary),
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF0A0A0A),
+                      backgroundColor: AppColors.background,
                       padding: const EdgeInsets.all(12),
                     ),
                   ),

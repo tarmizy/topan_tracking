@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/models/traccar_models.dart';
@@ -70,11 +71,11 @@ class DriversController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Tambah Pengemudi',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -104,8 +105,8 @@ class DriversController extends GetxController {
                   'Error',
                   'Nama dan No. KTP/SIM harus diisi',
                   snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.danger,
+                  colorText: AppColors.onPrimary,
                 );
                 return;
               }
@@ -120,9 +121,9 @@ class DriversController extends GetxController {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -138,13 +139,13 @@ class DriversController extends GetxController {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: const Color(0xFF00D4FF)),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: const Color(0xFF0A0A0A),
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -155,7 +156,7 @@ class DriversController extends GetxController {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D4FF)),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
     );
@@ -170,15 +171,15 @@ class DriversController extends GetxController {
       controller: controller,
       keyboardType: TextInputType.number,
       inputFormatters: [ThousandsSeparatorFormatter()],
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: const Color(0xFF00D4FF)),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         prefixText: 'Rp ',
-        prefixStyle: const TextStyle(color: Colors.white),
+        prefixStyle: const TextStyle(color: AppColors.textPrimary),
         filled: true,
-        fillColor: const Color(0xFF0A0A0A),
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -189,7 +190,7 @@ class DriversController extends GetxController {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D4FF)),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
     );
@@ -217,16 +218,16 @@ class DriversController extends GetxController {
         'Berhasil',
         'Pengemudi berhasil ditambahkan',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal menambahkan pengemudi',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -254,16 +255,16 @@ class DriversController extends GetxController {
         'Berhasil',
         newIsActive ? 'Pengemudi diaktifkan' : 'Pengemudi dinonaktifkan',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal mengupdate status',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -296,8 +297,8 @@ class DriversController extends GetxController {
         'Gagal',
         'Kendaraan sudah digunakan oleh ${existingDriver?.name ?? "pengemudi lain"} yang sedang aktif',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
         duration: const Duration(seconds: 3),
       );
       return;
@@ -317,16 +318,16 @@ class DriversController extends GetxController {
             ? 'Pengemudi berhasil di-assign'
             : 'Pengemudi di-unassign',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal assign pengemudi',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -342,11 +343,11 @@ class DriversController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Assign ke Kendaraan',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: Obx(
           () => Column(
@@ -354,13 +355,13 @@ class DriversController extends GetxController {
             children: [
               Text(
                 'Pengemudi: ${driver.name}',
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -368,16 +369,16 @@ class DriversController extends GetxController {
                     value: selectedDevice.value,
                     hint: const Text(
                       'Pilih Kendaraan',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
-                    dropdownColor: const Color(0xFF1A1A1A),
+                    dropdownColor: AppColors.surface,
                     isExpanded: true,
                     items: [
                       const DropdownMenuItem<TraccarDevice?>(
                         value: null,
                         child: Text(
                           'Tidak ada',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
                       ...devices.map((d) {
@@ -395,8 +396,8 @@ class DriversController extends GetxController {
                                   d.name,
                                   style: TextStyle(
                                     color: isAvailable
-                                        ? Colors.white
-                                        : Colors.grey,
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -407,13 +408,13 @@ class DriversController extends GetxController {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.2),
+                                    color: AppColors.warning.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     usingDriver.name,
                                     style: const TextStyle(
-                                      color: Colors.orange,
+                                      color: AppColors.warning,
                                       fontSize: 10,
                                     ),
                                   ),
@@ -430,7 +431,7 @@ class DriversController extends GetxController {
               const SizedBox(height: 8),
               const Text(
                 'Kendaraan yang sudah digunakan pengemudi aktif tidak dapat dipilih',
-                style: TextStyle(color: Colors.grey, fontSize: 11),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -444,9 +445,9 @@ class DriversController extends GetxController {
               assignToDevice(driver, selectedDevice.value?.id);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -456,14 +457,14 @@ class DriversController extends GetxController {
   Future<void> deleteDriver(int id) async {
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text(
           'Hapus Pengemudi',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: const Text(
           'Yakin ingin menghapus pengemudi ini?',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -472,8 +473,8 @@ class DriversController extends GetxController {
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -488,8 +489,8 @@ class DriversController extends GetxController {
           'Berhasil',
           'Pengemudi berhasil dihapus',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+          backgroundColor: AppColors.success,
+          colorText: AppColors.onPrimary,
         );
       }
       isLoading.value = false;
@@ -506,7 +507,7 @@ class DriversController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SingleChildScrollView(
@@ -517,7 +518,7 @@ class DriversController extends GetxController {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -528,14 +529,14 @@ class DriversController extends GetxController {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: driver.isActive
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.primary.withValues(alpha: 0.2),
                     child: Icon(
                       Icons.person,
                       size: 30,
                       color: driver.isActive
-                          ? Colors.green
-                          : const Color(0xFF00D4FF),
+                          ? AppColors.success
+                          : AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -546,7 +547,7 @@ class DriversController extends GetxController {
                         Text(
                           driver.name,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -559,16 +560,16 @@ class DriversController extends GetxController {
                           ),
                           decoration: BoxDecoration(
                             color: driver.isActive
-                                ? Colors.green.withValues(alpha: 0.2)
-                                : Colors.grey.withValues(alpha: 0.2),
+                                ? AppColors.success.withValues(alpha: 0.2)
+                                : AppColors.textSecondary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             driver.isActive ? 'AKTIF' : 'NONAKTIF',
                             style: TextStyle(
                               color: driver.isActive
-                                  ? Colors.green
-                                  : Colors.grey,
+                                  ? AppColors.success
+                                  : AppColors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -584,8 +585,8 @@ class DriversController extends GetxController {
                       Get.back();
                       toggleDriverStatus(driver);
                     },
-                    activeTrackColor: Colors.green.withValues(alpha: 0.5),
-                    activeThumbColor: Colors.green,
+                    activeTrackColor: AppColors.success.withValues(alpha: 0.5),
+                    activeThumbColor: AppColors.success,
                   ),
                 ],
               ),
@@ -606,11 +607,11 @@ class DriversController extends GetxController {
               ),
 
               if (driver.isActive && driver.rentalStartDate != null) ...[
-                const Divider(color: Colors.grey, height: 32),
+                const Divider(color: AppColors.textSecondary, height: 32),
                 const Text(
                   'LAPORAN SEWA',
                   style: TextStyle(
-                    color: Color(0xFF00D4FF),
+                    color: AppColors.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -619,10 +620,10 @@ class DriversController extends GetxController {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A0A0A),
+                    color: AppColors.background,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF00D4FF).withValues(alpha: 0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -632,11 +633,11 @@ class DriversController extends GetxController {
                         children: [
                           const Text(
                             'Mulai Sewa',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.textSecondary),
                           ),
                           Text(
                             _formatDate(driver.rentalStartDate!),
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.textPrimary),
                           ),
                         ],
                       ),
@@ -646,29 +647,29 @@ class DriversController extends GetxController {
                         children: [
                           const Text(
                             'Durasi',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.textSecondary),
                           ),
                           Text(
                             '$rentalDays hari',
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.textPrimary),
                           ),
                         ],
                       ),
-                      const Divider(color: Colors.grey, height: 16),
+                      const Divider(color: AppColors.textSecondary, height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Total Biaya',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             'Rp ${_formatNumber(totalRental)}',
                             style: const TextStyle(
-                              color: Color(0xFF00D4FF),
+                              color: AppColors.primary,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -692,14 +693,14 @@ class DriversController extends GetxController {
                       },
                       icon: const Icon(
                         Icons.directions_car,
-                        color: Color(0xFF00D4FF),
+                        color: AppColors.primary,
                       ),
                       label: const Text(
                         'Assign',
-                        style: TextStyle(color: Color(0xFF00D4FF)),
+                        style: TextStyle(color: AppColors.primary),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF00D4FF)),
+                        side: const BorderSide(color: AppColors.primary),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -711,13 +712,13 @@ class DriversController extends GetxController {
                         Get.back();
                         deleteDriver(driver.id!);
                       },
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete, color: AppColors.danger),
                       label: const Text(
                         'Hapus',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: AppColors.danger),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red),
+                        side: const BorderSide(color: AppColors.danger),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -737,13 +738,13 @@ class DriversController extends GetxController {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 20),
+          Icon(icon, color: AppColors.textSecondary, size: 20),
           const SizedBox(width: 12),
-          Text('$label: ', style: const TextStyle(color: Colors.grey)),
+          Text('$label: ', style: const TextStyle(color: AppColors.textSecondary)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimary),
               textAlign: TextAlign.end,
             ),
           ),

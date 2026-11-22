@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -132,10 +133,10 @@ class PlaybackController extends GetxController {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF00D4FF),
-              onPrimary: Colors.black,
-              surface: Color(0xFF1A1A1A),
-              onSurface: Colors.white,
+              primary: AppColors.primary,
+              onPrimary: AppColors.onPrimary,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,

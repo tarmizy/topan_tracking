@@ -1,4 +1,6 @@
 import 'dart:convert';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/support.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -115,8 +117,8 @@ class LoginController extends GetxController {
         saveError == null ? 'Berhasil' : 'Berhasil masuk',
         saveError ?? "Selamat datang, ${result.data?.name ?? 'User'}!",
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
+        backgroundColor: AppColors.success.withValues(alpha: 0.8),
+        colorText: AppColors.onPrimary,
         duration: const Duration(seconds: 2),
       );
       Get.offAllNamed(Routes.home);
@@ -128,12 +130,16 @@ class LoginController extends GetxController {
   }
 
   void forgotPassword() {
-    Get.snackbar(
-      'Info',
-      'Hubungi administrator untuk reset password',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF1A1A1A),
-      colorText: Colors.white,
+    final email = emailController.text.trim();
+    TopanSupport.openWhatsApp(
+      'Halo Topan, saya lupa kata sandi akun saya'
+      '${email.isNotEmpty ? ' ($email)' : ''}. Mohon bantu reset.',
+    );
+  }
+
+  void contactSupport() {
+    TopanSupport.openWhatsApp(
+      'Halo Topan, saya butuh bantuan untuk akun aplikasi Topan.',
     );
   }
 
