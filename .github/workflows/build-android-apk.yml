@@ -1,10 +1,15 @@
-name: Build Android APK
+name: Build Android
 
+# Alur rilis:
+# - push ke build/android-apk  -> APK uji coba (ditandatangani kunci debug)
+# - push ke main               -> APK + AAB bertanda tangan rilis, AAB dikirim ke Play Store
+# - tag android-vX.Y.Z         -> APK bertanda tangan rilis, diunggah ke Google Drive
 on:
   workflow_dispatch:
   push:
     branches:
       - build/android-apk
+      - main
     tags:
       - 'android-v*'
 
@@ -42,11 +47,11 @@ jobs:
         run: flutter pub get --enforce-lockfile
 
       - name: Build APK for testing
-        if: github.ref_type != 'tag'
+        if: github.ref_type != 'tag' && github.ref != 'refs/heads/main'
         run: flutter build apk --release --no-pub
 
-      - name: Build APK signed with the release keystore
-        if: github.ref_type == 'tag'
+      - name: Build APK and AAB signed with the release keystore
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         shell: bash
         env:
           TOPAN_ANDROID_KEYSTORE_B64: ${{ secrets.TOPAN_ANDROID_KEYSTORE_B64 }}
@@ -54,10 +59,15 @@ jobs:
           TOPAN_ANDROID_KEY_ALIAS: ${{ secrets.TOPAN_ANDROID_KEY_ALIAS }}
           TOPAN_ANDROID_KEY_PASSWORD: ${{ secrets.TOPAN_ANDROID_KEY_PASSWORD }}
         run: |
-          if [[ ! "$GITHUB_REF_NAME" =~ ^android-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Use a release tag such as android-v1.0.1"
-            exit 1
+          version_args=(--build-number="$GITHUB_RUN_NUMBER")
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^android-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Use a release tag such as android-v1.0.1"
+              exit 1
+            fi
+            version_args+=(--build-name="${GITHUB_REF_NAME#android-v}")
           fi
+          # On main the version name comes from pubspec.yaml (version: X.Y.Z+N).
           : "${TOPAN_ANDROID_KEYSTORE_B64:?Set the release keystore secret}"
           : "${TOPAN_ANDROID_STORE_PASSWORD:?Set the keystore password secret}"
           : "${TOPAN_ANDROID_KEY_ALIAS:?Set the release key alias secret}"
@@ -67,8 +77,10 @@ jobs:
           trap 'rm -f "$TOPAN_ANDROID_KEYSTORE"' EXIT
           base64 --decode <<< "$TOPAN_ANDROID_KEYSTORE_B64" > "$TOPAN_ANDROID_KEYSTORE"
           unset TOPAN_ANDROID_KEYSTORE_B64
-          flutter build apk --release --no-pub \
-            --build-name="${GITHUB_REF_NAME#android-v}" --build-number="$GITHUB_RUN_NUMBER"
+          flutter build apk --release --no-pub "${version_args[@]}"
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            flutter build appbundle --release --no-pub "${version_args[@]}"
+          fi
 
       - name: Verify APK signature
         run: '"$ANDROID_HOME/build-tools/36.0.0/apksigner" verify build/app/outputs/flutter-apk/app-release.apk'
@@ -80,6 +92,56 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           compression-level: 0
+
+      - name: Upload AAB for Google Play
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: topan-tracking-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          compression-level: 0
+
+  publish-play:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: topan-android-play-release
+      cancel-in-progress: false
+
+    steps:
+      - name: Check Google Play credentials
+        id: creds
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [[ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON is not set; skipping the Google Play upload."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download the signed AAB
+        if: steps.creds.outputs.ready == 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: topan-tracking-aab
+          path: aab
+
+      - name: Upload to Google Play
+        if: steps.creds.outputs.ready == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.topan.topan_tracking
+          releaseFiles: aab/app-release.aab
+          # Ubah lewat Settings > Variables: PLAY_TRACK (production/internal/alpha/beta),
+          # PLAY_RELEASE_STATUS (completed/draft/inProgress).
+          track: ${{ vars.PLAY_TRACK || 'production' }}
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
 
   publish-drive:
     if: github.ref_type == 'tag'
