@@ -15,19 +15,18 @@ class _SplashViewState extends State<SplashView> {
   @override
   void initState() {
     super.initState();
-    _checkSessionAndNavigate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkSessionAndNavigate();
+      }
+    });
   }
 
-  void _checkSessionAndNavigate() async {
-    await Future.delayed(const Duration(seconds: 2));
-
+  Future<void> _checkSessionAndNavigate() async {
     final traccarApi = Get.find<TraccarApiService>();
     final hasValidSession = await traccarApi.checkSession();
-
-    if (hasValidSession) {
-      Get.offAllNamed(Routes.home);
-    } else {
-      Get.offAllNamed(Routes.login);
+    if (mounted) {
+      Get.offAllNamed(hasValidSession ? Routes.home : Routes.login);
     }
   }
 

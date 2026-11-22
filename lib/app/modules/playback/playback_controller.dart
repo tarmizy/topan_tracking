@@ -13,7 +13,7 @@ class PlaybackController extends GetxController {
   final VehicleService _vehicleService = Get.find<VehicleService>();
 
   final mapController = MapController();
-  final selectedMapProvider = MapProvider.openStreetMap.obs;
+  final selectedMapProvider = MapProvider.locationIQ.obs;
 
   // Selected device
   Rxn<TraccarDevice> get selectedDevice => _vehicleService.selectedDevice;

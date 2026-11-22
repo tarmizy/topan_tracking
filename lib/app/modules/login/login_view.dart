@@ -128,7 +128,21 @@ class LoginView extends GetView<LoginController> {
                 const SizedBox(height: 8),
                 // Password Field
                 _PasswordTextField(controller: controller),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
+                Obx(
+                  () => CheckboxListTile(
+                    value: controller.rememberCredentials.value,
+                    onChanged: controller.isLoading.value
+                        ? null
+                        : (checked) => controller.setRememberCredentials(
+                            checked ?? false,
+                          ),
+                    title: const Text('Simpan email dan kata sandi'),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // Login Button
                 Obx(
                   () => GradientButton(

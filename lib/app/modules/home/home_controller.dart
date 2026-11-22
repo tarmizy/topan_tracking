@@ -7,7 +7,6 @@ import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/vehicle_service.dart';
 import '../../data/services/traccar_api_service.dart';
-import '../../data/services/session_service.dart';
 import '../../routes/app_pages.dart';
 
 class HomeController extends GetxController {
@@ -646,10 +645,6 @@ class HomeController extends GetxController {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              // Stop session timer
-              if (Get.isRegistered<SessionService>()) {
-                Get.find<SessionService>().stopTimer();
-              }
               await _traccarApi.logout();
               Get.offAllNamed(Routes.login);
             },
