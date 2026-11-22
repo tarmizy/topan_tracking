@@ -149,7 +149,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.topan.topan_tracking
           releaseFiles: aab/app-release.aab
-          # Catatan rilis "Yang baru" diambil dari play/whatsnew/whatsnew-id-ID.
+          # Catatan rilis "Yang baru" diambil dari play/whatsnew/whatsnew-id.
           whatsNewDirectory: play/whatsnew
           # Ubah lewat Settings > Variables: PLAY_TRACK (production/internal/alpha/beta),
           # PLAY_RELEASE_STATUS (completed/draft/inProgress).
