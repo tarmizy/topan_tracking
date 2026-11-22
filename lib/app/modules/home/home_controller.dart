@@ -31,9 +31,10 @@ class HomeController extends GetxController {
   TraccarPosition? get selectedPosition => _vehicleService.selectedPosition;
   Map<int, TraccarPosition> get positions => _vehicleService.positions;
 
-  final isEngineOn = true.obs;
+  bool? get ignitionStatus => selectedPosition?.ignitionStatus;
   final speedLimit = 90.obs;
   final isCommandLoading = false.obs;
+  final isPositionRequestLoading = false.obs;
 
   // Date filter for trip history
   final Rxn<DateTime> filterStartDate = Rxn<DateTime>();
@@ -91,8 +92,6 @@ class HomeController extends GetxController {
     ever(selectedDevice, (device) {
       if (device != null) {
         try {
-          final pos = positions[device.id];
-          isEngineOn.value = pos?.ignition ?? false;
           centerOnVehicle();
         } catch (e) {
           debugPrint('Error updating device selection: $e');
@@ -502,7 +501,6 @@ class HomeController extends GetxController {
     final success = await _vehicleService.killEngine();
 
     if (success) {
-      isEngineOn.value = false;
       _showSuccessSnackbar('Perintah matikan mesin terkirim');
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -515,7 +513,6 @@ class HomeController extends GetxController {
     final success = await _vehicleService.restoreEngine();
 
     if (success) {
-      isEngineOn.value = true;
       _showSuccessSnackbar('Perintah pulihkan mesin terkirim');
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -534,9 +531,8 @@ class HomeController extends GetxController {
     }
 
     if (success) {
-      isEngineOn.value = turnOn;
       _showSuccessSnackbar(
-        turnOn ? 'Mesin berhasil dinyalakan' : 'Mesin berhasil dimatikan',
+        turnOn ? 'Perintah pemulihan terkirim' : 'Perintah pemutusan terkirim',
       );
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -562,19 +558,29 @@ class HomeController extends GetxController {
   }
 
   Future<void> requestPosition() async {
-    isCommandLoading.value = true;
-    final success = await _vehicleService.requestPosition();
+    if (isPositionRequestLoading.value) return;
 
-    if (success) {
-      _showSuccessSnackbar('Permintaan posisi terkirim');
-      // Refresh positions after a delay
-      Future.delayed(const Duration(seconds: 3), () {
-        refreshData();
-      });
-    } else {
-      _showErrorSnackbar('Gagal mengirim permintaan');
+    isPositionRequestLoading.value = true;
+    try {
+      final result = await _vehicleService.requestPosition();
+      if (isClosed) return;
+
+      switch (result.data) {
+        case TraccarCommandDelivery.sent:
+          _showSuccessSnackbar(
+            'Permintaan terkirim. Menunggu posisi dari GPS.',
+          );
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!isClosed) _traccarApi.getPositions();
+          });
+        case TraccarCommandDelivery.queued:
+          _showSuccessSnackbar('Permintaan masuk antrean server.');
+        case null:
+          _showErrorSnackbar(result.error ?? 'Gagal mengirim permintaan.');
+      }
+    } finally {
+      if (!isClosed) isPositionRequestLoading.value = false;
     }
-    isCommandLoading.value = false;
   }
 
   void openSOS() {

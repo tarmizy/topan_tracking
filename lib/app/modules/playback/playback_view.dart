@@ -247,10 +247,11 @@ class PlaybackView extends GetView<PlaybackController> {
               children: [
                 Icon(Icons.map_outlined, size: 64, color: Colors.grey.shade700),
                 const SizedBox(height: 16),
-                const Text(
-                  'Pilih kendaraan dan tanggal\nkemudian tekan "Muat Rute"',
+                Text(
+                  controller.routeMessage.value ??
+                      'Pilih kendaraan dan tanggal\nkemudian tekan "Muat Rute"',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
               ],
             ),
@@ -259,6 +260,8 @@ class PlaybackView extends GetView<PlaybackController> {
       }
 
       final mapProvider = controller.selectedMapProvider.value;
+      final position = controller.currentPosition.value;
+      final accuracy = position?.accuracy;
       return FlutterMap(
         mapController: controller.mapController,
         options: MapOptions(
@@ -296,6 +299,22 @@ class PlaybackView extends GetView<PlaybackController> {
               ],
             ),
 
+          if (position != null &&
+              accuracy != null &&
+              accuracy.isFinite &&
+              accuracy > 0)
+            CircleLayer(
+              circles: [
+                CircleMarker(
+                  point: LatLng(position.latitude, position.longitude),
+                  radius: accuracy,
+                  useRadiusInMeter: true,
+                  color: const Color(0x3300D4FF),
+                  borderColor: const Color(0x6600D4FF),
+                  borderStrokeWidth: 1,
+                ),
+              ],
+            ),
           // Markers
           MarkerLayer(
             markers: [
@@ -338,12 +357,9 @@ class PlaybackView extends GetView<PlaybackController> {
                   ),
                 ),
               // Current position marker
-              if (controller.currentPosition.value != null)
+              if (position != null)
                 Marker(
-                  point: LatLng(
-                    controller.currentPosition.value!.latitude,
-                    controller.currentPosition.value!.longitude,
-                  ),
+                  point: LatLng(position.latitude, position.longitude),
                   width: 50,
                   height: 50,
                   child: _buildVehicleMarker(),
@@ -420,7 +436,7 @@ class PlaybackView extends GetView<PlaybackController> {
                     const SizedBox(width: 10),
                     Text(
                       controller.formatTime(
-                        controller.currentPosition.value!.deviceTime,
+                        controller.currentPosition.value!.fixTime.toLocal(),
                       ),
                       style: const TextStyle(
                         color: Colors.white,

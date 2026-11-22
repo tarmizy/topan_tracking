@@ -549,7 +549,7 @@ class TraccarApiService extends GetxService {
 
   // ==================== COMMANDS ====================
 
-  Future<TraccarApiResponse<bool>> sendCommand({
+  Future<TraccarApiResponse<TraccarCommandDelivery>> sendCommand({
     required int deviceId,
     required String type,
     Map<String, dynamic>? attributes,
@@ -567,15 +567,33 @@ class TraccarApiService extends GetxService {
         body: json.encode(command),
       );
 
-      if (response.statusCode == 200) {
-        return TraccarApiResponse(success: true, data: true);
-      }
+      return switch (response.statusCode) {
+        200 => TraccarApiResponse(
+          success: true,
+          data: TraccarCommandDelivery.sent,
+        ),
+        202 => TraccarApiResponse(
+          success: true,
+          data: TraccarCommandDelivery.queued,
+        ),
+        400 => TraccarApiResponse(
+          success: false,
+          error: 'Server menolak perintah. Periksa dukungan GPS dan izin akun.',
+        ),
+        401 || 403 => TraccarApiResponse(
+          success: false,
+          error: 'Sesi atau izin akun tidak mengizinkan perintah ini.',
+        ),
+        _ => TraccarApiResponse(
+          success: false,
+          error: 'Gagal mengirim perintah (HTTP ${response.statusCode}).',
+        ),
+      };
+    } catch (e) {
       return TraccarApiResponse(
         success: false,
-        error: 'Gagal mengirim perintah',
+        error: 'Koneksi ke server gagal.',
       );
-    } catch (e) {
-      return TraccarApiResponse(success: false, error: 'Error: $e');
     }
   }
 

@@ -162,17 +162,24 @@ class TraccarPosition {
   });
 
   factory TraccarPosition.fromJson(Map<String, dynamic> json) {
+    final latitude = json['latitude'];
+    final longitude = json['longitude'];
+    final deviceTime =
+        DateTime.tryParse(json['deviceTime'] ?? '') ?? DateTime.now();
     return TraccarPosition(
       id: json['id'] ?? 0,
       deviceId: json['deviceId'] ?? 0,
       protocol: json['protocol'] ?? '',
-      deviceTime: DateTime.tryParse(json['deviceTime'] ?? '') ?? DateTime.now(),
-      fixTime: DateTime.tryParse(json['fixTime'] ?? '') ?? DateTime.now(),
+      deviceTime: deviceTime,
+      fixTime: DateTime.tryParse(json['fixTime'] ?? '') ?? deviceTime,
       serverTime: DateTime.tryParse(json['serverTime'] ?? '') ?? DateTime.now(),
       outdated: json['outdated'] ?? false,
-      valid: json['valid'] ?? true,
-      latitude: (json['latitude'] ?? 0).toDouble(),
-      longitude: (json['longitude'] ?? 0).toDouble(),
+      valid:
+          (json['valid'] ?? true) == true &&
+          latitude is num &&
+          longitude is num,
+      latitude: latitude is num ? latitude.toDouble() : 0,
+      longitude: longitude is num ? longitude.toDouble() : 0,
       altitude: (json['altitude'] ?? 0).toDouble(),
       speed: (json['speed'] ?? 0).toDouble(),
       course: (json['course'] ?? 0).toDouble(),
@@ -192,8 +199,12 @@ class TraccarPosition {
     return null;
   }
 
-  // Get ignition status
-  bool get ignition => attributes?['ignition'] ?? false;
+  bool? get ignitionStatus {
+    final value = attributes?['ignition'];
+    return value is bool ? value : null;
+  }
+
+  bool get ignition => ignitionStatus ?? false;
 
   // Get total distance in km
   double? get totalDistance {
@@ -443,6 +454,8 @@ class TraccarTrip {
   // Max speed in km/h
   double get maxSpeedKmh => maxSpeed * 1.852;
 }
+
+enum TraccarCommandDelivery { sent, queued }
 
 // Command types for Traccar
 class TraccarCommandTypes {

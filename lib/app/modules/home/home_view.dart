@@ -794,7 +794,12 @@ class _VehicleInfoCard extends StatelessWidget {
 
     final speed = position?.speedKmh ?? 0;
     final battery = position?.batteryLevel;
-    final ignition = position?.ignition ?? false;
+    final ignition = position?.ignitionStatus;
+    final ignitionColor = switch (ignition) {
+      true => Colors.green,
+      false => Colors.red,
+      null => AppColors.textSecondary,
+    };
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -855,15 +860,14 @@ class _VehicleInfoCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ignition
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.2),
+                  color: ignitionColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  ignition ? Icons.power : Icons.power_off,
-                  color: ignition ? Colors.green : Colors.red,
-                ),
+                child: Icon(switch (ignition) {
+                  true => Icons.power,
+                  false => Icons.power_off,
+                  null => Icons.help_outline,
+                }, color: ignitionColor),
               ),
             ],
           ),
@@ -962,14 +966,19 @@ class _PerintahTab extends GetView<HomeController> {
           _EngineControlCard(),
           const SizedBox(height: 16),
           // Request Position Card
-          _CommandCard(
-            icon: Icons.gps_fixed,
-            title: 'Permintaan Posisi',
-            subtitle: 'Minta update posisi terbaru',
-            color: AppColors.primary,
-            onTap: controller.requestPosition,
-            fullWidth: true,
-          ),
+          Obx(() {
+            final isRequesting = controller.isPositionRequestLoading.value;
+            return _CommandCard(
+              icon: Icons.gps_fixed,
+              title: 'Permintaan Posisi',
+              subtitle: isRequesting
+                  ? 'Menghubungi server…'
+                  : 'Minta posisi terbaru dari perangkat GPS',
+              color: AppColors.primary,
+              onTap: isRequesting ? null : controller.requestPosition,
+              fullWidth: true,
+            );
+          }),
           const SizedBox(height: 24),
           // Command History
           _CommandHistorySection(),
@@ -982,147 +991,86 @@ class _PerintahTab extends GetView<HomeController> {
 class _EngineControlCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Container(
+    return Obx(() {
+      final ignition = controller.ignitionStatus;
+      final isSending = controller.isCommandLoading.value;
+      final (status, color, icon) = switch (ignition) {
+        true => ('Kontak aktif', Colors.green, Icons.power),
+        false => ('Kontak mati', Colors.red, Icons.power_off),
+        null => (
+          'Status kontak belum tersedia',
+          AppColors.textSecondary,
+          Icons.help_outline,
+        ),
+      };
+      return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: controller.isEngineOn.value
-                ? [
-                    Colors.green.withValues(alpha: 0.3),
-                    Colors.green.withValues(alpha: 0.1),
-                  ]
-                : [
-                    Colors.red.withValues(alpha: 0.3),
-                    Colors.red.withValues(alpha: 0.1),
-                  ],
+            colors: [
+              color.withValues(alpha: 0.3),
+              color.withValues(alpha: 0.1),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: controller.isEngineOn.value
-                ? Colors.green.withValues(alpha: 0.5)
-                : Colors.red.withValues(alpha: 0.5),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: controller.isEngineOn.value
-                        ? Colors.green.withValues(alpha: 0.3)
-                        : Colors.red.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    controller.isEngineOn.value ? Icons.power : Icons.power_off,
-                    color: controller.isEngineOn.value
-                        ? Colors.green
-                        : Colors.red,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Kontrol Mesin',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.isEngineOn.value ? 'AKTIF' : 'MATI',
-                        style: TextStyle(
-                          color: controller.isEngineOn.value
-                              ? Colors.green
-                              : Colors.red,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Loading or Switch
-                controller.isCommandLoading.value
-                    ? Container(
-                        width: 60,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Switch(
-                        value: controller.isEngineOn.value,
-                        onChanged: (value) => controller.toggleEngine(value),
-                        activeColor: Colors.green,
-                        activeTrackColor: Colors.green.withValues(alpha: 0.5),
-                        inactiveThumbColor: Colors.red,
-                        inactiveTrackColor: Colors.red.withValues(alpha: 0.5),
-                      ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 32),
             ),
-            // Loading message
-            if (controller.isCommandLoading.value) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
-                      ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Kontrol Mesin',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      controller.isEngineOn.value
-                          ? 'Mematikan mesin...'
-                          : 'Menyalakan mesin...',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            if (isSending)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Tooltip(
+                message: ignition == true
+                    ? 'Kirim perintah putus akses mesin'
+                    : 'Kirim perintah pulihkan akses mesin',
+                child: Switch(
+                  value: ignition == true,
+                  onChanged: ignition == null ? null : controller.toggleEngine,
                 ),
               ),
-            ],
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -1131,7 +1079,7 @@ class _CommandCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool fullWidth;
 
   const _CommandCard({
@@ -1310,12 +1258,20 @@ class _CommandHistoryItemWidget extends GetView<HomeController> {
                   ),
                 ),
                 Text(
-                  controller.formatDateTime(command.timestamp),
+                  '${command.status} · ${controller.formatDateTime(command.timestamp)}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
                   ),
                 ),
+                if (command.errorMessage case final error?)
+                  Text(
+                    error,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
               ],
             ),
           ),

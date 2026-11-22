@@ -211,10 +211,24 @@ class VehicleService extends GetxService {
     String commandType, {
     Map<String, dynamic>? attributes,
   }) async {
-    if (selectedDevice.value == null) return false;
+    final result = await _sendCommand(commandType, attributes: attributes);
+    return result.data == TraccarCommandDelivery.sent;
+  }
+
+  Future<TraccarApiResponse<TraccarCommandDelivery>> _sendCommand(
+    String commandType, {
+    Map<String, dynamic>? attributes,
+  }) async {
+    final device = selectedDevice.value;
+    if (device == null) {
+      return TraccarApiResponse(
+        success: false,
+        error: 'Pilih kendaraan dahulu.',
+      );
+    }
 
     final result = await _traccarApi.sendCommand(
-      deviceId: selectedDevice.value!.id,
+      deviceId: device.id,
       type: commandType,
       attributes: attributes,
     );
@@ -225,14 +239,18 @@ class VehicleService extends GetxService {
       CommandHistoryItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         command: _getCommandName(commandType),
-        status: result.success ? 'Berhasil' : 'Gagal',
+        status: switch (result.data) {
+          TraccarCommandDelivery.sent => 'Terkirim',
+          TraccarCommandDelivery.queued => 'Dalam antrean',
+          null => 'Gagal',
+        },
         timestamp: DateTime.now(),
         isSuccess: result.success,
         errorMessage: result.error,
       ),
     );
 
-    return result.success;
+    return result;
   }
 
   String _getCommandName(String type) {
@@ -258,8 +276,8 @@ class VehicleService extends GetxService {
     return sendCommand(TraccarCommandTypes.engineResume);
   }
 
-  Future<bool> requestPosition() async {
-    return sendCommand(TraccarCommandTypes.positionSingle);
+  Future<TraccarApiResponse<TraccarCommandDelivery>> requestPosition() {
+    return _sendCommand(TraccarCommandTypes.positionSingle);
   }
 
   // ==================== GEOFENCE ====================
