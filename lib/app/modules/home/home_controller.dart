@@ -3,13 +3,12 @@ import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/vehicle_service.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/services/session_service.dart';
 import '../../routes/app_pages.dart';
-
-enum MapProvider { locationIQ, openStreetMap, cartoDark, cartoLight }
 
 class HomeController extends GetxController {
   late final VehicleService _vehicleService;
@@ -20,9 +19,6 @@ class HomeController extends GetxController {
   final isLoading = false.obs;
   final isMapLoaded = true.obs;
   final selectedMapProvider = MapProvider.locationIQ.obs;
-
-  // LocationIQ Access Token
-  static const String locationIQToken = 'pk.b5498eed1aef9d81027b4c3ff2032802';
 
   // Traccar data
   RxList<TraccarDevice> get devices => _vehicleService.devices;
@@ -78,32 +74,7 @@ class HomeController extends GetxController {
     _vehicleService.loadTripHistory();
   }
 
-  // Map tile URLs
-  String get currentTileUrl {
-    switch (selectedMapProvider.value) {
-      case MapProvider.locationIQ:
-        return 'https://tiles.locationiq.com/v3/streets/r/{z}/{x}/{y}.png?key=$locationIQToken';
-      case MapProvider.openStreetMap:
-        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-      case MapProvider.cartoDark:
-        return 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
-      case MapProvider.cartoLight:
-        return 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
-    }
-  }
-
-  String getMapProviderName(MapProvider provider) {
-    switch (provider) {
-      case MapProvider.locationIQ:
-        return 'LocationIQ';
-      case MapProvider.openStreetMap:
-        return 'OpenStreetMap';
-      case MapProvider.cartoDark:
-        return 'Carto Dark';
-      case MapProvider.cartoLight:
-        return 'Carto Light';
-    }
-  }
+  String get currentTileUrl => selectedMapProvider.value.tileUrl;
 
   @override
   void onInit() {
@@ -226,7 +197,7 @@ class HomeController extends GetxController {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      getMapProviderName(provider),
+                      provider.label,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,

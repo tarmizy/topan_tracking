@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/services/vehicle_service.dart';
@@ -12,6 +13,7 @@ class PlaybackController extends GetxController {
   final VehicleService _vehicleService = Get.find<VehicleService>();
 
   final mapController = MapController();
+  final selectedMapProvider = MapProvider.openStreetMap.obs;
 
   // Selected device
   Rxn<TraccarDevice> get selectedDevice => _vehicleService.selectedDevice;

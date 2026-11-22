@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import 'playback_controller.dart';
 
@@ -37,14 +38,35 @@ class PlaybackView extends GetView<PlaybackController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
-          const Text(
-            'Playback Rute',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Playback Rute',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Obx(
+                () => PopupMenuButton<MapProvider>(
+                  tooltip: 'Pilih Peta',
+                  icon: const Icon(Icons.layers, color: Colors.white),
+                  initialValue: controller.selectedMapProvider.value,
+                  onSelected: (provider) =>
+                      controller.selectedMapProvider.value = provider,
+                  itemBuilder: (context) => [
+                    for (final provider in MapProvider.values)
+                      PopupMenuItem(
+                        value: provider,
+                        child: Text(provider.label),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -236,6 +258,7 @@ class PlaybackView extends GetView<PlaybackController> {
         );
       }
 
+      final mapProvider = controller.selectedMapProvider.value;
       return FlutterMap(
         mapController: controller.mapController,
         options: MapOptions(
@@ -246,9 +269,9 @@ class PlaybackView extends GetView<PlaybackController> {
         ),
         children: [
           TileLayer(
-            urlTemplate:
-                'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.topan.tracking',
+            key: ValueKey(mapProvider),
+            urlTemplate: mapProvider.tileUrl,
+            userAgentPackageName: 'com.topan.topan_tracking',
           ),
 
           // Route polyline
@@ -327,6 +350,7 @@ class PlaybackView extends GetView<PlaybackController> {
                 ),
             ],
           ),
+          SimpleAttributionWidget(source: Text(mapProvider.attribution)),
         ],
       );
     });
