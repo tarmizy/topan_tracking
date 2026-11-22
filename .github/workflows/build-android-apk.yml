@@ -68,7 +68,13 @@ jobs:
             fi
             version_args+=(--build-name="${GITHUB_REF_NAME#android-v}")
           fi
-          # On main the version name comes from pubspec.yaml (version: X.Y.Z+N).
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            # Versi otomatis: MAJOR.MINOR dari pubspec.yaml + nomor run, mis. 1.0.23.
+            base="$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)"
+            : "${base:?Could not read version from pubspec.yaml}"
+            version_args+=(--build-name="$base.$GITHUB_RUN_NUMBER")
+            echo "Version name: $base.$GITHUB_RUN_NUMBER (code $GITHUB_RUN_NUMBER)"
+          fi
           : "${TOPAN_ANDROID_KEYSTORE_B64:?Set the release keystore secret}"
           : "${TOPAN_ANDROID_STORE_PASSWORD:?Set the keystore password secret}"
           : "${TOPAN_ANDROID_KEY_ALIAS:?Set the release key alias secret}"
@@ -134,6 +140,24 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
+
+      - name: Prepare release notes
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # Catatan rilis yang tidak diubah sejak rilis sebelumnya diganti teks umum,
+          # supaya pengguna tidak melihat catatan lama berulang-ulang.
+          notes=play/whatsnew/whatsnew-id
+          if [[ -n "$BEFORE" && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
+             && git diff --quiet "$BEFORE" HEAD -- "$notes"; then
+            printf '%s\n' '• Perbaikan bug dan peningkatan performa' > "$notes"
+            echo "Catatan rilis tidak diubah: memakai teks umum."
+          else
+            echo "Memakai catatan rilis dari $notes."
+          fi
+          cat "$notes"
 
       - name: Download the signed AAB
         if: steps.creds.outputs.ready == 'true'
