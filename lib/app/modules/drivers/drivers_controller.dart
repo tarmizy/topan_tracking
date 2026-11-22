@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
+import '../../core/utils/support.dart';
 import 'package:get/get.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/models/traccar_models.dart';
@@ -26,10 +29,137 @@ class DriversController extends GetxController {
   }
 
   // Calculate total rental for a driver
-  double calculateTotalRental(TraccarDriver driver) {
-    if (!driver.isActive || driver.rentalStartDate == null) return 0;
-    final days = DateTime.now().difference(driver.rentalStartDate!).inDays + 1;
-    return days * driver.dailyRate;
+  double calculateTotalRental(TraccarDriver driver) =>
+      driver.rental?.total ?? 0;
+
+  // ==================== SEWA ====================
+
+  /// Dialog memilih lama sewa (hari). Null bila dibatalkan.
+  Future<int?> _askRentalDays({required String title, int initial = 1}) {
+    final days = initial.obs;
+    return Get.dialog<int>(
+      AlertDialog(
+        title: Text(title),
+        content: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pengingat otomatis muncul bila unit belum kembali setelah masa sewa habis.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [1, 2, 3, 7, 14, 30]
+                    .map(
+                      (d) => ChoiceChip(
+                        label: Text('$d hari'),
+                        selected: days.value == d,
+                        selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                        onSelected: (_) => days.value = d,
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: days.value > 1 ? () => days.value-- : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text(
+                    '${days.value} hari',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  IconButton(
+                    onPressed: () => days.value++,
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Get.back(result: days.value),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tambah masa sewa yang sedang berjalan.
+  Future<void> extendRental(TraccarDriver driver) async {
+    final days = await _askRentalDays(title: 'Perpanjang sewa');
+    if (days == null) return;
+    final base = driver.rentalEndDate != null &&
+            driver.rentalEndDate!.isAfter(DateTime.now())
+        ? driver.rentalEndDate!
+        : DateTime.now();
+    final attrs = Map<String, dynamic>.from(driver.attributes ?? {});
+    attrs['rentalEndDate'] = base.add(Duration(days: days)).toIso8601String();
+    final result = await _traccarApi.updateDriver(driver.copyWith(attributes: attrs));
+    if (result.success) {
+      await loadDrivers();
+      Get.snackbar(
+        'Berhasil',
+        'Sewa diperpanjang $days hari',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
+      );
+    }
+  }
+
+  /// Teks nota sewa untuk WhatsApp.
+  String buildInvoiceText(TraccarDriver driver) {
+    final r = driver.rental;
+    final owner = _traccarApi.currentUser?.name;
+    final lines = <String>[
+      '*NOTA SEWA KENDARAAN*',
+      if (owner != null && owner.isNotEmpty) owner,
+      '',
+      'Penyewa: ${driver.name}',
+      'Kendaraan: ${getDeviceName(driver.deviceId)}',
+      if (r != null) ...[
+        'Mulai: ${formatDateTimeId(r.start)}',
+        if (r.end != null) 'Selesai: ${formatDateTimeId(r.end!)}',
+        'Durasi: ${r.billedDays} hari',
+        'Tarif: ${formatRupiah(driver.dailyRate)}/hari',
+        if (r.isOverdue) 'Keterlambatan: ${formatDurationId(r.overdueBy)}',
+        '',
+        '*Total: ${formatRupiah(r.total)}*',
+      ] else
+        'Tarif: ${formatRupiah(driver.dailyRate)}/hari',
+      '',
+      'Terima kasih telah menyewa.',
+      '_Dikirim lewat aplikasi Topan_',
+    ];
+    return lines.join('\n');
+  }
+
+  Future<void> sendInvoice(TraccarDriver driver) =>
+      sendWhatsApp(toWhatsAppNumber(driver.phone), buildInvoiceText(driver));
+
+  Future<void> sendReturnReminder(TraccarDriver driver) {
+    final r = driver.rental;
+    final end = r?.end != null ? formatDateTimeId(r!.end!) : '-';
+    return sendWhatsApp(
+      toWhatsAppNumber(driver.phone),
+      'Halo ${driver.name}, masa sewa ${getDeviceName(driver.deviceId)} '
+      'berakhir pada $end. Mohon segera dikembalikan, atau balas pesan ini '
+      'bila ingin memperpanjang. Terima kasih.',
+    );
   }
 
   // Get device name by id
@@ -70,11 +200,11 @@ class DriversController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Tambah Pengemudi',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -104,8 +234,8 @@ class DriversController extends GetxController {
                   'Error',
                   'Nama dan No. KTP/SIM harus diisi',
                   snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.danger,
+                  colorText: AppColors.onPrimary,
                 );
                 return;
               }
@@ -120,9 +250,9 @@ class DriversController extends GetxController {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -138,13 +268,13 @@ class DriversController extends GetxController {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: const Color(0xFF00D4FF)),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: const Color(0xFF0A0A0A),
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -155,7 +285,7 @@ class DriversController extends GetxController {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D4FF)),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
     );
@@ -170,15 +300,15 @@ class DriversController extends GetxController {
       controller: controller,
       keyboardType: TextInputType.number,
       inputFormatters: [ThousandsSeparatorFormatter()],
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: AppColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: const Color(0xFF00D4FF)),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary),
         prefixText: 'Rp ',
-        prefixStyle: const TextStyle(color: Colors.white),
+        prefixStyle: const TextStyle(color: AppColors.textPrimary),
         filled: true,
-        fillColor: const Color(0xFF0A0A0A),
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -189,7 +319,7 @@ class DriversController extends GetxController {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D4FF)),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
     );
@@ -217,16 +347,16 @@ class DriversController extends GetxController {
         'Berhasil',
         'Pengemudi berhasil ditambahkan',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal menambahkan pengemudi',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -240,9 +370,18 @@ class DriversController extends GetxController {
     newAttributes['isActive'] = newIsActive;
 
     if (newIsActive) {
-      newAttributes['rentalStartDate'] = DateTime.now().toIso8601String();
+      final days = await _askRentalDays(title: 'Mulai sewa');
+      if (days == null) {
+        isLoading.value = false;
+        return;
+      }
+      final start = DateTime.now();
+      newAttributes['rentalStartDate'] = start.toIso8601String();
+      newAttributes['rentalEndDate'] =
+          start.add(Duration(days: days)).toIso8601String();
     } else {
       newAttributes.remove('rentalStartDate');
+      newAttributes.remove('rentalEndDate');
     }
 
     final updatedDriver = driver.copyWith(attributes: newAttributes);
@@ -254,16 +393,16 @@ class DriversController extends GetxController {
         'Berhasil',
         newIsActive ? 'Pengemudi diaktifkan' : 'Pengemudi dinonaktifkan',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal mengupdate status',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -296,8 +435,8 @@ class DriversController extends GetxController {
         'Gagal',
         'Kendaraan sudah digunakan oleh ${existingDriver?.name ?? "pengemudi lain"} yang sedang aktif',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
         duration: const Duration(seconds: 3),
       );
       return;
@@ -317,16 +456,16 @@ class DriversController extends GetxController {
             ? 'Pengemudi berhasil di-assign'
             : 'Pengemudi di-unassign',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
       );
     } else {
       Get.snackbar(
         'Gagal',
         result.error ?? 'Gagal assign pengemudi',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger,
+        colorText: AppColors.onPrimary,
       );
     }
     isLoading.value = false;
@@ -342,11 +481,11 @@ class DriversController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Assign ke Kendaraan',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: Obx(
           () => Column(
@@ -354,13 +493,13 @@ class DriversController extends GetxController {
             children: [
               Text(
                 'Pengemudi: ${driver.name}',
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -368,16 +507,16 @@ class DriversController extends GetxController {
                     value: selectedDevice.value,
                     hint: const Text(
                       'Pilih Kendaraan',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
-                    dropdownColor: const Color(0xFF1A1A1A),
+                    dropdownColor: AppColors.surface,
                     isExpanded: true,
                     items: [
                       const DropdownMenuItem<TraccarDevice?>(
                         value: null,
                         child: Text(
                           'Tidak ada',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
                       ...devices.map((d) {
@@ -395,8 +534,8 @@ class DriversController extends GetxController {
                                   d.name,
                                   style: TextStyle(
                                     color: isAvailable
-                                        ? Colors.white
-                                        : Colors.grey,
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -407,13 +546,13 @@ class DriversController extends GetxController {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.2),
+                                    color: AppColors.warning.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     usingDriver.name,
                                     style: const TextStyle(
-                                      color: Colors.orange,
+                                      color: AppColors.warning,
                                       fontSize: 10,
                                     ),
                                   ),
@@ -430,7 +569,7 @@ class DriversController extends GetxController {
               const SizedBox(height: 8),
               const Text(
                 'Kendaraan yang sudah digunakan pengemudi aktif tidak dapat dipilih',
-                style: TextStyle(color: Colors.grey, fontSize: 11),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -444,9 +583,9 @@ class DriversController extends GetxController {
               assignToDevice(driver, selectedDevice.value?.id);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D4FF),
+              backgroundColor: AppColors.primary,
             ),
-            child: const Text('Simpan', style: TextStyle(color: Colors.black)),
+            child: const Text('Simpan', style: TextStyle(color: AppColors.onPrimary)),
           ),
         ],
       ),
@@ -456,14 +595,14 @@ class DriversController extends GetxController {
   Future<void> deleteDriver(int id) async {
     final confirm = await Get.dialog<bool>(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         title: const Text(
           'Hapus Pengemudi',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.textPrimary),
         ),
         content: const Text(
           'Yakin ingin menghapus pengemudi ini?',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -472,8 +611,8 @@ class DriversController extends GetxController {
           ),
           ElevatedButton(
             onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -488,8 +627,8 @@ class DriversController extends GetxController {
           'Berhasil',
           'Pengemudi berhasil dihapus',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+          backgroundColor: AppColors.success,
+          colorText: AppColors.onPrimary,
         );
       }
       isLoading.value = false;
@@ -497,16 +636,13 @@ class DriversController extends GetxController {
   }
 
   void showDriverDetail(TraccarDriver driver) {
-    final totalRental = calculateTotalRental(driver);
-    final rentalDays = driver.rentalStartDate != null
-        ? DateTime.now().difference(driver.rentalStartDate!).inDays + 1
-        : 0;
+    final rental = driver.rental;
 
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SingleChildScrollView(
@@ -517,7 +653,7 @@ class DriversController extends GetxController {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -528,14 +664,14 @@ class DriversController extends GetxController {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: driver.isActive
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : const Color(0xFF00D4FF).withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.primary.withValues(alpha: 0.2),
                     child: Icon(
                       Icons.person,
                       size: 30,
                       color: driver.isActive
-                          ? Colors.green
-                          : const Color(0xFF00D4FF),
+                          ? AppColors.success
+                          : AppColors.primary,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -546,7 +682,7 @@ class DriversController extends GetxController {
                         Text(
                           driver.name,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -559,16 +695,16 @@ class DriversController extends GetxController {
                           ),
                           decoration: BoxDecoration(
                             color: driver.isActive
-                                ? Colors.green.withValues(alpha: 0.2)
-                                : Colors.grey.withValues(alpha: 0.2),
+                                ? AppColors.success.withValues(alpha: 0.2)
+                                : AppColors.textSecondary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             driver.isActive ? 'AKTIF' : 'NONAKTIF',
                             style: TextStyle(
                               color: driver.isActive
-                                  ? Colors.green
-                                  : Colors.grey,
+                                  ? AppColors.success
+                                  : AppColors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -584,8 +720,8 @@ class DriversController extends GetxController {
                       Get.back();
                       toggleDriverStatus(driver);
                     },
-                    activeTrackColor: Colors.green.withValues(alpha: 0.5),
-                    activeThumbColor: Colors.green,
+                    activeTrackColor: AppColors.success.withValues(alpha: 0.5),
+                    activeThumbColor: AppColors.success,
                   ),
                 ],
               ),
@@ -605,13 +741,14 @@ class DriversController extends GetxController {
                 'Rp ${_formatNumber(driver.dailyRate)}',
               ),
 
-              if (driver.isActive && driver.rentalStartDate != null) ...[
-                const Divider(color: Colors.grey, height: 32),
+              if (rental != null) ...[
+                const Divider(color: AppColors.border, height: 32),
                 const Text(
                   'LAPORAN SEWA',
                   style: TextStyle(
-                    color: Color(0xFF00D4FF),
+                    color: AppColors.primaryDark,
                     fontSize: 12,
+                    letterSpacing: 1,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -619,64 +756,101 @@ class DriversController extends GetxController {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A0A0A),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFF00D4FF).withValues(alpha: 0.3),
+                      color: rental.isOverdue
+                          ? AppColors.danger.withValues(alpha: 0.5)
+                          : AppColors.border,
                     ),
                   ),
                   child: Column(
                     children: [
+                      _rentalRow('Mulai sewa', formatDateTimeId(rental.start)),
+                      if (rental.end != null)
+                        _rentalRow('Selesai sewa', formatDateTimeId(rental.end!)),
+                      _rentalRow('Durasi ditagih', '${rental.billedDays} hari'),
+                      if (rental.end != null)
+                        _rentalRow(
+                          'Status',
+                          rental.isOverdue
+                              ? 'Terlambat ${formatDurationId(rental.overdueBy)}'
+                              : 'Sisa ${formatDurationId(rental.remaining)}',
+                          color: rental.isOverdue
+                              ? AppColors.danger
+                              : AppColors.success,
+                        ),
+                      const Divider(color: AppColors.border, height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Mulai Sewa',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          Text(
-                            _formatDate(driver.rentalStartDate!),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Durasi',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          Text(
-                            '$rentalDays hari',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const Divider(color: Colors.grey, height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Biaya',
+                            'Total biaya',
                             style: TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
-                            'Rp ${_formatNumber(totalRental)}',
+                            formatRupiah(rental.total),
                             style: const TextStyle(
-                              color: Color(0xFF00D4FF),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => sendInvoice(driver),
+                    icon: const Icon(Icons.receipt_long, size: 20),
+                    label: const Text('Kirim Nota via WhatsApp'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Get.back();
+                          extendRental(driver);
+                        },
+                        icon: const Icon(Icons.more_time, color: AppColors.primaryDark),
+                        label: const Text(
+                          'Perpanjang',
+                          style: TextStyle(color: AppColors.primaryDark),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    if (rental.isOverdue) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => sendReturnReminder(driver),
+                          icon: const Icon(Icons.notifications_active, color: AppColors.danger),
+                          label: const Text(
+                            'Ingatkan',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.danger.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
 
@@ -692,14 +866,14 @@ class DriversController extends GetxController {
                       },
                       icon: const Icon(
                         Icons.directions_car,
-                        color: Color(0xFF00D4FF),
+                        color: AppColors.primary,
                       ),
                       label: const Text(
                         'Assign',
-                        style: TextStyle(color: Color(0xFF00D4FF)),
+                        style: TextStyle(color: AppColors.primary),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF00D4FF)),
+                        side: const BorderSide(color: AppColors.primary),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -711,13 +885,13 @@ class DriversController extends GetxController {
                         Get.back();
                         deleteDriver(driver.id!);
                       },
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete, color: AppColors.danger),
                       label: const Text(
                         'Hapus',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: AppColors.danger),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.red),
+                        side: const BorderSide(color: AppColors.danger),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -732,18 +906,37 @@ class DriversController extends GetxController {
     );
   }
 
+  Widget _rentalRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? AppColors.textPrimary,
+              fontWeight: color != null ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 20),
+          Icon(icon, color: AppColors.textSecondary, size: 20),
           const SizedBox(width: 12),
-          Text('$label: ', style: const TextStyle(color: Colors.grey)),
+          Text('$label: ', style: const TextStyle(color: AppColors.textSecondary)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimary),
               textAlign: TextAlign.end,
             ),
           ),
@@ -761,7 +954,4 @@ class DriversController extends GetxController {
         );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
 }

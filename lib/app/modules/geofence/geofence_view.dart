@@ -17,17 +17,17 @@ class GeofenceView extends GetView<GeofenceController> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: const Text(
           'Zona Aman',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.list, color: Colors.white),
+            icon: const Icon(Icons.list, color: AppColors.textPrimary),
             onPressed: () => _showSavedZones(),
           ),
         ],
@@ -69,10 +69,10 @@ class GeofenceView extends GetView<GeofenceController> {
                             radius: controller.radiusValue.value,
                             useRadiusInMeter: true,
                             color: controller.isOutsideZone.value
-                                ? Colors.red.withValues(alpha: 0.2)
+                                ? AppColors.danger.withValues(alpha: 0.2)
                                 : AppColors.primary.withValues(alpha: 0.2),
                             borderColor: controller.isOutsideZone.value
-                                ? Colors.red
+                                ? AppColors.danger
                                 : AppColors.primary,
                             borderStrokeWidth: 3,
                           ),
@@ -104,7 +104,7 @@ class GeofenceView extends GetView<GeofenceController> {
                               ),
                               child: const Icon(
                                 Icons.my_location,
-                                color: Colors.black,
+                                color: AppColors.onPrimary,
                                 size: 24,
                               ),
                             ),
@@ -133,32 +133,12 @@ class GeofenceView extends GetView<GeofenceController> {
                         child: Text(
                           'Radius: ${controller.radiusText}',
                           style: const TextStyle(
-                            color: Colors.black,
+                            color: AppColors.onPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                // Test buttons
-                Positioned(
-                  right: 16,
-                  top: 60,
-                  child: Column(
-                    children: [
-                      _TestButton(
-                        label: 'Keluar',
-                        color: Colors.red,
-                        onTap: controller.simulateExitZone,
-                      ),
-                      const SizedBox(height: 8),
-                      _TestButton(
-                        label: 'Masuk',
-                        color: Colors.green,
-                        onTap: controller.simulateEnterZone,
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -182,7 +162,7 @@ class GeofenceView extends GetView<GeofenceController> {
                       children: [
                         const Text(
                           'Atur Jarak Radius',
-                          style: TextStyle(color: Colors.white, fontSize: 15),
+                          style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
                         ),
                         Obx(
                           () => Text(
@@ -269,7 +249,7 @@ class GeofenceView extends GetView<GeofenceController> {
                     const SizedBox(height: 12),
                     _AlertToggle(
                       icon: Icons.login,
-                      iconColor: Colors.green,
+                      iconColor: AppColors.success,
                       title: 'Masuk Area',
                       subtitle: 'Alert saat kendaraan masuk zona',
                       value: controller.isEnterAlertEnabled,
@@ -278,7 +258,7 @@ class GeofenceView extends GetView<GeofenceController> {
                     const SizedBox(height: 8),
                     _AlertToggle(
                       icon: Icons.logout,
-                      iconColor: Colors.red,
+                      iconColor: AppColors.danger,
                       title: 'Keluar Area',
                       subtitle: 'Alert saat kendaraan keluar zona',
                       value: controller.isExitAlertEnabled,
@@ -318,7 +298,7 @@ class GeofenceView extends GetView<GeofenceController> {
             const Text(
               'Zona Tersimpan',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -373,7 +353,7 @@ class GeofenceView extends GetView<GeofenceController> {
                                           Text(
                                             zone.name,
                                             style: const TextStyle(
-                                              color: Colors.white,
+                                              color: AppColors.textPrimary,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -389,7 +369,7 @@ class GeofenceView extends GetView<GeofenceController> {
                                     ),
                                     const Icon(
                                       Icons.chevron_right,
-                                      color: Colors.grey,
+                                      color: AppColors.textSecondary,
                                     ),
                                   ],
                                 ),
@@ -430,7 +410,7 @@ class GeofenceView extends GetView<GeofenceController> {
                                       child: Text(
                                         '+${linkedDevices.length - 3} kendaraan lainnya',
                                         style: const TextStyle(
-                                          color: Colors.grey,
+                                          color: AppColors.textSecondary,
                                           fontSize: 10,
                                         ),
                                       ),
@@ -450,39 +430,6 @@ class GeofenceView extends GetView<GeofenceController> {
   }
 }
 
-class _TestButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _TestButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _AlertToggle extends StatelessWidget {
   final IconData icon;
@@ -527,7 +474,7 @@ class _AlertToggle extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -583,7 +530,7 @@ class _DeviceSelector extends GetView<GeofenceController> {
                         border: Border.all(
                           color: controller.isAllDevices.value
                               ? AppColors.primary
-                              : Colors.grey,
+                              : AppColors.textSecondary,
                           width: 2,
                         ),
                         color: controller.isAllDevices.value
@@ -594,7 +541,7 @@ class _DeviceSelector extends GetView<GeofenceController> {
                           ? const Icon(
                               Icons.check,
                               size: 14,
-                              color: Colors.black,
+                              color: AppColors.onPrimary,
                             )
                           : null,
                     ),
@@ -602,7 +549,7 @@ class _DeviceSelector extends GetView<GeofenceController> {
                     const Text(
                       'Semua Kendaraan',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -612,7 +559,7 @@ class _DeviceSelector extends GetView<GeofenceController> {
             ),
           ),
 
-          const Divider(color: Colors.grey, height: 16),
+          const Divider(color: AppColors.textSecondary, height: 16),
 
           // Individual devices
           Obx(
@@ -645,13 +592,13 @@ class _DeviceSelector extends GetView<GeofenceController> {
                         Icon(
                           Icons.directions_car,
                           size: 14,
-                          color: isSelected ? AppColors.primary : Colors.grey,
+                          color: isSelected ? AppColors.primary : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           device.name,
                           style: TextStyle(
-                            color: isSelected ? AppColors.primary : Colors.grey,
+                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
                             fontSize: 12,
                           ),
                         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/topan_logo.dart';
 import '../../core/widgets/gradient_button.dart';
 import 'register_controller.dart';
 
@@ -14,12 +15,12 @@ class RegisterView extends GetView<RegisterController> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: const Text(
           'Daftar',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -29,33 +30,20 @@ class RegisterView extends GetView<RegisterController> {
           child: Column(
             children: [
               const SizedBox(height: 32),
-              // Logo
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.location_on,
-                  color: AppColors.primary,
-                  size: 40,
-                ),
-              ),
+              const TopanLogo(size: 72),
               const SizedBox(height: 16),
               const Text(
-                'Lacakin',
+                'Buat akun Topan',
                 style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
-                'Buat akun baru',
-                style: TextStyle(color: AppColors.primary, fontSize: 14),
+                'Pantau kendaraan Anda dalam hitungan menit.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
               const SizedBox(height: 40),
               // Name Field
@@ -63,7 +51,7 @@ class RegisterView extends GetView<RegisterController> {
               const SizedBox(height: 8),
               TextField(
                 controller: controller.nameController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   hintText: 'Masukkan nama lengkap...',
                   prefixIcon: Icon(
@@ -79,7 +67,7 @@ class RegisterView extends GetView<RegisterController> {
               TextField(
                 controller: controller.emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   hintText: 'Masukkan email kamu...',
                   prefixIcon: Icon(
@@ -96,7 +84,7 @@ class RegisterView extends GetView<RegisterController> {
                 () => TextField(
                   controller: controller.passwordController,
                   obscureText: !controller.isPasswordVisible.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     hintText: '••••••••',
                     prefixIcon: const Icon(
@@ -123,7 +111,7 @@ class RegisterView extends GetView<RegisterController> {
                 () => TextField(
                   controller: controller.confirmPasswordController,
                   obscureText: !controller.isConfirmPasswordVisible.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     hintText: '••••••••',
                     prefixIcon: const Icon(
@@ -187,7 +175,7 @@ class RegisterView extends GetView<RegisterController> {
       child: Text(
         label,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.textPrimary,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),

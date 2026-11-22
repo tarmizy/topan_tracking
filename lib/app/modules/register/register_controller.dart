@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/services/traccar_api_service.dart';
 import 'package:get/get.dart';
 import '../../routes/app_pages.dart';
 
@@ -28,8 +30,8 @@ class RegisterController extends GetxController {
         'Error',
         'Semua field harus diisi',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.8),
+        colorText: AppColors.onPrimary,
       );
       return;
     }
@@ -39,19 +41,49 @@ class RegisterController extends GetxController {
         'Error',
         'Password tidak sama',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.8),
+        colorText: AppColors.onPrimary,
+      );
+      return;
+    }
+
+    if (passwordController.text.length < 6) {
+      Get.snackbar(
+        'Error',
+        'Password minimal 6 karakter',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
       );
       return;
     }
 
     isLoading.value = true;
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-
+    final api = Get.find<TraccarApiService>();
+    final email = emailController.text.trim();
+    final result = await api.registerUser(
+      name: nameController.text.trim(),
+      email: email,
+      password: passwordController.text,
+    );
+    if (!result.success) {
+      isLoading.value = false;
+      Get.snackbar(
+        'Pendaftaran gagal',
+        result.error ?? 'Silakan coba lagi.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
+      );
+      return;
+    }
+    final login = await api.login(email, passwordController.text);
     isLoading.value = false;
-    Get.offAllNamed(Routes.home);
+    if (login.success) {
+      Get.offAllNamed(Routes.home);
+    } else {
+      Get.offAllNamed(Routes.login);
+    }
   }
 
   void goToLogin() {

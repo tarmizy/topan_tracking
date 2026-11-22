@@ -1,15 +1,17 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
+import '../../core/utils/support.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/vehicle_service.dart';
 import '../../data/services/traccar_api_service.dart';
-import '../../data/services/session_service.dart';
 import '../../routes/app_pages.dart';
-
-enum MapProvider { locationIQ, openStreetMap, cartoDark, cartoLight }
 
 class HomeController extends GetxController {
   late final VehicleService _vehicleService;
@@ -20,9 +22,6 @@ class HomeController extends GetxController {
   final isLoading = false.obs;
   final isMapLoaded = true.obs;
   final selectedMapProvider = MapProvider.locationIQ.obs;
-
-  // LocationIQ Access Token
-  static const String locationIQToken = 'pk.b5498eed1aef9d81027b4c3ff2032802';
 
   // Traccar data
   RxList<TraccarDevice> get devices => _vehicleService.devices;
@@ -36,9 +35,10 @@ class HomeController extends GetxController {
   TraccarPosition? get selectedPosition => _vehicleService.selectedPosition;
   Map<int, TraccarPosition> get positions => _vehicleService.positions;
 
-  final isEngineOn = true.obs;
+  bool? get ignitionStatus => selectedPosition?.ignitionStatus;
   final speedLimit = 90.obs;
   final isCommandLoading = false.obs;
+  final isPositionRequestLoading = false.obs;
 
   // Date filter for trip history
   final Rxn<DateTime> filterStartDate = Rxn<DateTime>();
@@ -78,32 +78,7 @@ class HomeController extends GetxController {
     _vehicleService.loadTripHistory();
   }
 
-  // Map tile URLs
-  String get currentTileUrl {
-    switch (selectedMapProvider.value) {
-      case MapProvider.locationIQ:
-        return 'https://tiles.locationiq.com/v3/streets/r/{z}/{x}/{y}.png?key=$locationIQToken';
-      case MapProvider.openStreetMap:
-        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-      case MapProvider.cartoDark:
-        return 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
-      case MapProvider.cartoLight:
-        return 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
-    }
-  }
-
-  String getMapProviderName(MapProvider provider) {
-    switch (provider) {
-      case MapProvider.locationIQ:
-        return 'LocationIQ';
-      case MapProvider.openStreetMap:
-        return 'OpenStreetMap';
-      case MapProvider.cartoDark:
-        return 'Carto Dark';
-      case MapProvider.cartoLight:
-        return 'Carto Light';
-    }
-  }
+  String get currentTileUrl => selectedMapProvider.value.tileUrl;
 
   @override
   void onInit() {
@@ -121,8 +96,6 @@ class HomeController extends GetxController {
     ever(selectedDevice, (device) {
       if (device != null) {
         try {
-          final pos = positions[device.id];
-          isEngineOn.value = pos?.ignition ?? false;
           centerOnVehicle();
         } catch (e) {
           debugPrint('Error updating device selection: $e');
@@ -137,6 +110,14 @@ class HomeController extends GetxController {
       isLoading.value = true;
       await _vehicleService.loadInitialData();
       debugPrint('HomeController: loadInitialData complete');
+      // Posisi baru tersedia setelah data dimuat: arahkan peta ke kendaraan.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          centerOnVehicle();
+        } catch (e) {
+          debugPrint('centerOnVehicle after load failed: $e');
+        }
+      });
     } catch (e, stackTrace) {
       debugPrint('HomeController Error loading data: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -144,8 +125,8 @@ class HomeController extends GetxController {
         'Error',
         'Gagal memuat data',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-        colorText: Colors.white,
+        backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+        colorText: AppColors.onPrimary,
       );
     } finally {
       isLoading.value = false;
@@ -169,7 +150,7 @@ class HomeController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -179,7 +160,7 @@ class HomeController extends GetxController {
             const Text(
               'Pilih Peta',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -203,12 +184,12 @@ class HomeController extends GetxController {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: selectedMapProvider.value == provider
-                ? const Color(0xFF00D4FF).withValues(alpha: 0.2)
-                : const Color(0xFF0A0A0A),
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : AppColors.background,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selectedMapProvider.value == provider
-                  ? const Color(0xFF00D4FF)
+                  ? AppColors.primary
                   : Colors.transparent,
             ),
           ),
@@ -217,8 +198,8 @@ class HomeController extends GetxController {
               Icon(
                 _getMapIcon(provider),
                 color: selectedMapProvider.value == provider
-                    ? const Color(0xFF00D4FF)
-                    : Colors.grey,
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -226,21 +207,21 @@ class HomeController extends GetxController {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      getMapProviderName(provider),
+                      provider.label,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       _getMapDescription(provider),
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
               ),
               if (selectedMapProvider.value == provider)
-                const Icon(Icons.check_circle, color: Color(0xFF00D4FF)),
+                const Icon(Icons.check_circle, color: AppColors.primary),
             ],
           ),
         ),
@@ -368,7 +349,7 @@ class HomeController extends GetxController {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A1A),
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -381,13 +362,13 @@ class HomeController extends GetxController {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: device.isOnline
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.red.withValues(alpha: 0.2),
+                        ? AppColors.success.withValues(alpha: 0.2)
+                        : AppColors.danger.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.directions_car,
-                    color: device.isOnline ? Colors.green : Colors.red,
+                    color: device.isOnline ? AppColors.success : AppColors.danger,
                     size: 28,
                   ),
                 ),
@@ -399,7 +380,7 @@ class HomeController extends GetxController {
                       Text(
                         device.name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -412,8 +393,8 @@ class HomeController extends GetxController {
                             height: 8,
                             decoration: BoxDecoration(
                               color: device.isOnline
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? AppColors.success
+                                  : AppColors.danger,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -421,18 +402,18 @@ class HomeController extends GetxController {
                           Text(
                             device.statusText,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.textSecondary,
                               fontSize: 14,
                             ),
                           ),
                           if (position != null) ...[
                             const SizedBox(width: 12),
-                            Icon(Icons.speed, color: Colors.grey, size: 14),
+                            Icon(Icons.speed, color: AppColors.textSecondary, size: 14),
                             const SizedBox(width: 4),
                             Text(
                               '${position.speedKmh.toStringAsFixed(0)} km/h',
                               style: const TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.textSecondary,
                                 fontSize: 14,
                               ),
                             ),
@@ -452,7 +433,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.navigation,
                     label: 'Navigasi',
-                    color: const Color(0xFF00D4FF),
+                    color: AppColors.primary,
                     onTap: () {
                       Get.back();
                       navigateToVehicle(device);
@@ -464,7 +445,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.my_location,
                     label: 'Fokus',
-                    color: Colors.orange,
+                    color: AppColors.warning,
                     onTap: () {
                       Get.back();
                       selectDevice(device);
@@ -477,7 +458,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.route,
                     label: 'Playback',
-                    color: Colors.purple,
+                    color: AppColors.primaryDark,
                     onTap: () {
                       Get.back();
                       selectDevice(device);
@@ -487,7 +468,164 @@ class HomeController extends GetxController {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  shareLiveLocation(device);
+                },
+                icon: const Icon(Icons.share_location, size: 20),
+                label: const Text('Bagikan Lokasi Live'),
+              ),
+            ),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== BAGIKAN LOKASI LIVE ====================
+
+  static const _shareDurations = <String, Duration>{
+    '1 jam': Duration(hours: 1),
+    '6 jam': Duration(hours: 6),
+    '24 jam': Duration(hours: 24),
+    '3 hari': Duration(days: 3),
+    '7 hari': Duration(days: 7),
+  };
+
+  /// Buat link lokasi live untuk keluarga atau penyewa, lalu kirim lewat WhatsApp.
+  Future<void> shareLiveLocation(TraccarDevice device) async {
+    final duration = await Get.bottomSheet<Duration>(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bagikan lokasi ${device.name}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Penerima bisa melihat posisi kendaraan secara langsung tanpa '
+              'perlu akun. Link otomatis tidak berlaku setelah waktunya habis.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Berlaku selama',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _shareDurations.entries
+                  .map(
+                    (e) => ActionChip(
+                      label: Text(e.key),
+                      onPressed: () => Get.back(result: e.value),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (duration == null) return;
+
+    final expiration = DateTime.now().add(duration);
+    final result = await _traccarApi.shareDevice(
+      deviceId: device.id,
+      expiration: expiration,
+    );
+    if (!result.success || result.data == null) {
+      _showErrorSnackbar(result.error ?? 'Gagal membuat link');
+      return;
+    }
+    final link = _traccarApi.shareLink(result.data!);
+    final message =
+        'Pantau lokasi ${device.name} secara langsung lewat Topan:\n$link\n\n'
+        'Link berlaku sampai ${formatDateTimeId(expiration)}.';
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success),
+                SizedBox(width: 8),
+                Text(
+                  'Link lokasi live siap',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Berlaku sampai ${formatDateTimeId(expiration)}',
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: SelectableText(
+                link,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => sendWhatsApp(null, message),
+                icon: const Icon(Icons.chat, size: 20),
+                label: const Text('Kirim via WhatsApp'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  _showSuccessSnackbar('Link disalin');
+                },
+                icon: const Icon(Icons.copy, color: AppColors.primaryDark),
+                label: const Text(
+                  'Salin link',
+                  style: TextStyle(color: AppColors.primaryDark),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -532,7 +670,6 @@ class HomeController extends GetxController {
     final success = await _vehicleService.killEngine();
 
     if (success) {
-      isEngineOn.value = false;
       _showSuccessSnackbar('Perintah matikan mesin terkirim');
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -545,7 +682,6 @@ class HomeController extends GetxController {
     final success = await _vehicleService.restoreEngine();
 
     if (success) {
-      isEngineOn.value = true;
       _showSuccessSnackbar('Perintah pulihkan mesin terkirim');
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -564,9 +700,8 @@ class HomeController extends GetxController {
     }
 
     if (success) {
-      isEngineOn.value = turnOn;
       _showSuccessSnackbar(
-        turnOn ? 'Mesin berhasil dinyalakan' : 'Mesin berhasil dimatikan',
+        turnOn ? 'Perintah pemulihan terkirim' : 'Perintah pemutusan terkirim',
       );
     } else {
       _showErrorSnackbar('Gagal mengirim perintah');
@@ -592,31 +727,41 @@ class HomeController extends GetxController {
   }
 
   Future<void> requestPosition() async {
-    isCommandLoading.value = true;
-    final success = await _vehicleService.requestPosition();
+    if (isPositionRequestLoading.value) return;
 
-    if (success) {
-      _showSuccessSnackbar('Permintaan posisi terkirim');
-      // Refresh positions after a delay
-      Future.delayed(const Duration(seconds: 3), () {
-        refreshData();
-      });
-    } else {
-      _showErrorSnackbar('Gagal mengirim permintaan');
+    isPositionRequestLoading.value = true;
+    try {
+      final result = await _vehicleService.requestPosition();
+      if (isClosed) return;
+
+      switch (result.data) {
+        case TraccarCommandDelivery.sent:
+          _showSuccessSnackbar(
+            'Permintaan terkirim. Menunggu posisi dari GPS.',
+          );
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!isClosed) _traccarApi.getPositions();
+          });
+        case TraccarCommandDelivery.queued:
+          _showSuccessSnackbar('Permintaan masuk antrean server.');
+        case null:
+          _showErrorSnackbar(result.error ?? 'Gagal mengirim permintaan.');
+      }
+    } finally {
+      if (!isClosed) isPositionRequestLoading.value = false;
     }
-    isCommandLoading.value = false;
   }
 
   void openSOS() {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 28),
             SizedBox(width: 12),
-            Text('Konfirmasi SOS', style: TextStyle(color: Colors.white)),
+            Text('Konfirmasi SOS', style: TextStyle(color: AppColors.textPrimary)),
           ],
         ),
         content: const Text(
@@ -630,10 +775,10 @@ class HomeController extends GetxController {
               Get.back();
               _sendSOS();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text(
               'Kirim SOS',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.textPrimary),
             ),
           ),
         ],
@@ -663,9 +808,9 @@ class HomeController extends GetxController {
   void logout() {
     Get.dialog(
       AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Keluar', style: TextStyle(color: Colors.white)),
+        title: const Text('Keluar', style: TextStyle(color: AppColors.textPrimary)),
         content: const Text(
           'Apakah Anda yakin ingin keluar?',
           style: TextStyle(color: Colors.white70),
@@ -675,15 +820,11 @@ class HomeController extends GetxController {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              // Stop session timer
-              if (Get.isRegistered<SessionService>()) {
-                Get.find<SessionService>().stopTimer();
-              }
               await _traccarApi.logout();
               Get.offAllNamed(Routes.login);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Keluar', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('Keluar', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -695,8 +836,8 @@ class HomeController extends GetxController {
       'Berhasil',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withValues(alpha: 0.9),
-      colorText: Colors.white,
+      backgroundColor: AppColors.success.withValues(alpha: 0.9),
+      colorText: AppColors.onPrimary,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
     );
@@ -707,8 +848,8 @@ class HomeController extends GetxController {
       'Gagal',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withValues(alpha: 0.9),
-      colorText: Colors.white,
+      backgroundColor: AppColors.danger.withValues(alpha: 0.9),
+      colorText: AppColors.onPrimary,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
     );

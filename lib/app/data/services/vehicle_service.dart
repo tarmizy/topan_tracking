@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/traccar_models.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
 import 'traccar_api_service.dart';
 
 class VehicleService extends GetxService {
@@ -27,6 +30,13 @@ class VehicleService extends GetxService {
   void onInit() {
     super.onInit();
     _traccarApi = Get.find<TraccarApiService>();
+
+    // Segarkan notifikasi & cek sewa terlambat setiap 60 detik.
+    _eventsTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!_traccarApi.isConnected.value) return;
+      if (selectedDevice.value != null) loadEvents();
+      checkOverdueRentals();
+    });
 
     // Listen to device updates from WebSocket
     ever(_traccarApi.devices, (devices) {
@@ -99,6 +109,7 @@ class VehicleService extends GetxService {
         debugPrint('Loading events...');
         try {
           await loadEvents();
+          await checkOverdueRentals();
         } catch (e) {
           debugPrint('Events load failed (non-critical): $e');
         }
@@ -172,24 +183,90 @@ class VehicleService extends GetxService {
       );
 
       if (result.success && result.data != null) {
-        notifications.value = result.data!
+        _eventItems = result.data!
             .map(
               (e) => NotificationItem(
                 id: e.id.toString(),
                 title: e.eventTitle,
-                message: '${e.eventIcon} ${e.eventTitle}',
+                message: _eventMessage(e),
                 type: _getEventType(e.type),
                 timestamp: e.eventTime,
               ),
             )
             .toList();
-        debugPrint('Events loaded: ${notifications.length} events');
+        _publishNotifications();
+        debugPrint('Events loaded: ${_eventItems.length} events');
       } else {
         debugPrint('Events failed: ${result.error}');
       }
     } catch (e) {
       debugPrint('Error loading events: $e');
     }
+  }
+
+  // ==================== PENGINGAT SEWA ====================
+
+  List<NotificationItem> _eventItems = [];
+  List<NotificationItem> _rentalAlerts = [];
+  final Set<int> _announcedOverdue = {};
+
+  void _publishNotifications() {
+    final readIds = notifications.where((n) => n.isRead).map((n) => n.id).toSet();
+    notifications.value = [..._rentalAlerts, ..._eventItems]
+        .map((n) => readIds.contains(n.id) ? (n..isRead = true) : n)
+        .toList();
+  }
+
+  /// Cari penyewa yang masa sewanya sudah habis tapi unit belum dikembalikan.
+  Future<void> checkOverdueRentals() async {
+    final result = await _traccarApi.getDrivers();
+    if (!result.success || result.data == null) return;
+    final alerts = <NotificationItem>[];
+    for (final d in result.data!) {
+      final r = d.rental;
+      if (r == null || !r.isOverdue || d.id == null) continue;
+      final unit = _traccarApi.devices
+              .firstWhereOrNull((v) => v.id == d.deviceId)
+              ?.name ??
+          'Unit';
+      alerts.add(
+        NotificationItem(
+          id: 'rental-${d.id}',
+          title: 'Sewa terlambat',
+          message: '$unit · ${d.name} · lewat ${formatDurationId(r.overdueBy)}',
+          type: 'alert',
+          timestamp: r.end!,
+        ),
+      );
+      if (_announcedOverdue.add(d.id!)) {
+        Get.snackbar(
+          'Sewa terlambat',
+          '$unit (${d.name}) belum kembali. Lewat ${formatDurationId(r.overdueBy)}.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppColors.danger,
+          colorText: AppColors.onPrimary,
+          duration: const Duration(seconds: 5),
+        );
+      }
+    }
+    _rentalAlerts = alerts;
+    _publishNotifications();
+  }
+
+  /// Keterangan notifikasi: nama kendaraan + detail yang relevan.
+  String _eventMessage(TraccarEvent e) {
+    final device = _traccarApi.devices.firstWhereOrNull((d) => d.id == e.deviceId);
+    final name = device?.name ?? selectedDevice.value?.name ?? 'Kendaraan';
+    final speed = e.attributes?['speed'];
+    if (speed is num) {
+      return '$name · ${(speed * 1.852).round()} km/jam';
+    }
+    final geofenceId = e.geofenceId;
+    if (geofenceId != null) {
+      final zone = _traccarApi.geofences.firstWhereOrNull((g) => g.id == geofenceId);
+      if (zone != null) return '$name · ${zone.name}';
+    }
+    return name;
   }
 
   String _getEventType(String eventType) {
@@ -211,10 +288,24 @@ class VehicleService extends GetxService {
     String commandType, {
     Map<String, dynamic>? attributes,
   }) async {
-    if (selectedDevice.value == null) return false;
+    final result = await _sendCommand(commandType, attributes: attributes);
+    return result.data == TraccarCommandDelivery.sent;
+  }
+
+  Future<TraccarApiResponse<TraccarCommandDelivery>> _sendCommand(
+    String commandType, {
+    Map<String, dynamic>? attributes,
+  }) async {
+    final device = selectedDevice.value;
+    if (device == null) {
+      return TraccarApiResponse(
+        success: false,
+        error: 'Pilih kendaraan dahulu.',
+      );
+    }
 
     final result = await _traccarApi.sendCommand(
-      deviceId: selectedDevice.value!.id,
+      deviceId: device.id,
       type: commandType,
       attributes: attributes,
     );
@@ -225,14 +316,18 @@ class VehicleService extends GetxService {
       CommandHistoryItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         command: _getCommandName(commandType),
-        status: result.success ? 'Berhasil' : 'Gagal',
+        status: switch (result.data) {
+          TraccarCommandDelivery.sent => 'Terkirim',
+          TraccarCommandDelivery.queued => 'Dalam antrean',
+          null => 'Gagal',
+        },
         timestamp: DateTime.now(),
         isSuccess: result.success,
         errorMessage: result.error,
       ),
     );
 
-    return result.success;
+    return result;
   }
 
   String _getCommandName(String type) {
@@ -258,8 +353,8 @@ class VehicleService extends GetxService {
     return sendCommand(TraccarCommandTypes.engineResume);
   }
 
-  Future<bool> requestPosition() async {
-    return sendCommand(TraccarCommandTypes.positionSingle);
+  Future<TraccarApiResponse<TraccarCommandDelivery>> requestPosition() {
+    return _sendCommand(TraccarCommandTypes.positionSingle);
   }
 
   // ==================== GEOFENCE ====================
@@ -320,6 +415,14 @@ class VehicleService extends GetxService {
       notifications.where((n) => !n.isRead).length;
 
   // ==================== CLEANUP ====================
+
+  Timer? _eventsTimer;
+
+  @override
+  void onClose() {
+    _eventsTimer?.cancel();
+    super.onClose();
+  }
 
   void disconnect() {
     _traccarApi.disconnectWebSocket();

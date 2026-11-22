@@ -137,7 +137,7 @@ class _NotifikasiTab extends GetView<HomeController> {
                   const Text(
                     'Notifikasi',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -172,7 +172,7 @@ class _NotifikasiTab extends GetView<HomeController> {
                             Icon(
                               Icons.notifications_off_outlined,
                               size: 64,
-                              color: Colors.grey.shade700,
+                              color: AppColors.textHint,
                             ),
                             const SizedBox(height: 16),
                             const Text(
@@ -245,7 +245,7 @@ class _NotificationItem extends StatelessWidget {
                 Text(
                   notification.title,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: notification.isRead
                         ? FontWeight.normal
                         : FontWeight.bold,
@@ -304,15 +304,15 @@ class _NotificationItem extends StatelessWidget {
   Color _getNotificationColor(String type) {
     switch (type) {
       case 'geofence_enter':
-        return Colors.green;
+        return AppColors.success;
       case 'geofence_exit':
-        return Colors.red;
+        return AppColors.danger;
       case 'speed':
-        return Colors.orange;
+        return AppColors.warning;
       case 'engine':
         return Colors.blue;
       case 'sos':
-        return Colors.red;
+        return AppColors.danger;
       default:
         return AppColors.primary;
     }
@@ -352,7 +352,7 @@ class _BerandaTab extends GetView<HomeController> {
         Obx(
           () => controller.isLoading.value
               ? Container(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: AppColors.shadow,
                   child: const Center(child: CircularProgressIndicator()),
                 )
               : const SizedBox(),
@@ -473,7 +473,7 @@ class _VehicleMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     final markerColor = isSelected
         ? AppColors.primary
-        : (device.isOnline ? Colors.green : Colors.red);
+        : (device.isOnline ? AppColors.success : AppColors.danger);
 
     return GestureDetector(
       onTap: () => Get.find<HomeController>().showVehicleOptions(device),
@@ -492,14 +492,14 @@ class _VehicleMarker extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: AppColors.shadow,
                       blurRadius: 4,
                     ),
                   ],
                 ),
                 child: Icon(
                   _getDeviceIcon(device.category),
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   size: 16,
                 ),
               ),
@@ -554,12 +554,12 @@ class _MapControlButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppColors.shadow,
               blurRadius: 8,
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: AppColors.textPrimary, size: 20),
       ),
     );
   }
@@ -579,7 +579,7 @@ class _VehicleSelector extends GetView<HomeController> {
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: AppColors.shadow,
                 blurRadius: 8,
               ),
             ],
@@ -607,7 +607,7 @@ class _VehicleSelector extends GetView<HomeController> {
                       controller.selectedDevice.value?.name ??
                           'Pilih Kendaraan',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -659,7 +659,7 @@ class _VehicleSelector extends GetView<HomeController> {
             const Text(
               'Pilih Kendaraan',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -733,7 +733,7 @@ class _VehicleListItem extends GetView<HomeController> {
                     Text(
                       device.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -751,14 +751,14 @@ class _VehicleListItem extends GetView<HomeController> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: device.isOnline
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.2),
+                      ? AppColors.success.withValues(alpha: 0.2)
+                      : AppColors.danger.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   device.statusText,
                   style: TextStyle(
-                    color: device.isOnline ? Colors.green : Colors.red,
+                    color: device.isOnline ? AppColors.success : AppColors.danger,
                     fontSize: 11,
                   ),
                 ),
@@ -794,7 +794,12 @@ class _VehicleInfoCard extends StatelessWidget {
 
     final speed = position?.speedKmh ?? 0;
     final battery = position?.batteryLevel;
-    final ignition = position?.ignition ?? false;
+    final ignition = position?.ignitionStatus;
+    final ignitionColor = switch (ignition) {
+      true => AppColors.success,
+      false => AppColors.danger,
+      null => AppColors.textSecondary,
+    };
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -823,7 +828,7 @@ class _VehicleInfoCard extends StatelessWidget {
                     Text(
                       device!.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -835,7 +840,7 @@ class _VehicleInfoCard extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: device!.isOnline ? Colors.green : Colors.red,
+                            color: device!.isOnline ? AppColors.success : AppColors.danger,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -855,15 +860,14 @@ class _VehicleInfoCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ignition
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.2),
+                  color: ignitionColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  ignition ? Icons.power : Icons.power_off,
-                  color: ignition ? Colors.green : Colors.red,
-                ),
+                child: Icon(switch (ignition) {
+                  true => Icons.power,
+                  false => Icons.power_off,
+                  null => Icons.help_outline,
+                }, color: ignitionColor),
               ),
             ],
           ),
@@ -882,10 +886,10 @@ class _VehicleInfoCard extends StatelessWidget {
                   value: '$battery',
                   unit: '%',
                   valueColor: battery > 60
-                      ? Colors.green
+                      ? AppColors.success
                       : battery > 30
-                      ? Colors.orange
-                      : Colors.red,
+                      ? AppColors.warning
+                      : AppColors.danger,
                 ),
             ],
           ),
@@ -916,7 +920,7 @@ class _InfoItem extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: valueColor ?? Colors.white,
+            color: valueColor ?? AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -945,7 +949,7 @@ class _PerintahTab extends GetView<HomeController> {
           const Text(
             'Pusat Kendali',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -962,12 +966,30 @@ class _PerintahTab extends GetView<HomeController> {
           _EngineControlCard(),
           const SizedBox(height: 16),
           // Request Position Card
+          Obx(() {
+            final isRequesting = controller.isPositionRequestLoading.value;
+            return _CommandCard(
+              icon: Icons.gps_fixed,
+              title: 'Permintaan Posisi',
+              subtitle: isRequesting
+                  ? 'Menghubungi server…'
+                  : 'Minta posisi terbaru dari perangkat GPS',
+              color: AppColors.primary,
+              onTap: isRequesting ? null : controller.requestPosition,
+              fullWidth: true,
+            );
+          }),
+          const SizedBox(height: 16),
+          // Share live location
           _CommandCard(
-            icon: Icons.gps_fixed,
-            title: 'Permintaan Posisi',
-            subtitle: 'Minta update posisi terbaru',
-            color: AppColors.primary,
-            onTap: controller.requestPosition,
+            icon: Icons.share_location,
+            title: 'Bagikan Lokasi Live',
+            subtitle: 'Kirim link lokasi ke keluarga atau penyewa',
+            color: AppColors.success,
+            onTap: () {
+              final device = controller.selectedDevice.value;
+              if (device != null) controller.shareLiveLocation(device);
+            },
             fullWidth: true,
           ),
           const SizedBox(height: 24),
@@ -982,147 +1004,86 @@ class _PerintahTab extends GetView<HomeController> {
 class _EngineControlCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Container(
+    return Obx(() {
+      final ignition = controller.ignitionStatus;
+      final isSending = controller.isCommandLoading.value;
+      final (status, color, icon) = switch (ignition) {
+        true => ('Kontak aktif', AppColors.success, Icons.power),
+        false => ('Kontak mati', AppColors.danger, Icons.power_off),
+        null => (
+          'Status kontak belum tersedia',
+          AppColors.textSecondary,
+          Icons.help_outline,
+        ),
+      };
+      return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: controller.isEngineOn.value
-                ? [
-                    Colors.green.withValues(alpha: 0.3),
-                    Colors.green.withValues(alpha: 0.1),
-                  ]
-                : [
-                    Colors.red.withValues(alpha: 0.3),
-                    Colors.red.withValues(alpha: 0.1),
-                  ],
+            colors: [
+              color.withValues(alpha: 0.3),
+              color.withValues(alpha: 0.1),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: controller.isEngineOn.value
-                ? Colors.green.withValues(alpha: 0.5)
-                : Colors.red.withValues(alpha: 0.5),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: controller.isEngineOn.value
-                        ? Colors.green.withValues(alpha: 0.3)
-                        : Colors.red.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    controller.isEngineOn.value ? Icons.power : Icons.power_off,
-                    color: controller.isEngineOn.value
-                        ? Colors.green
-                        : Colors.red,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Kontrol Mesin',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        controller.isEngineOn.value ? 'AKTIF' : 'MATI',
-                        style: TextStyle(
-                          color: controller.isEngineOn.value
-                              ? Colors.green
-                              : Colors.red,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Loading or Switch
-                controller.isCommandLoading.value
-                    ? Container(
-                        width: 60,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Switch(
-                        value: controller.isEngineOn.value,
-                        onChanged: (value) => controller.toggleEngine(value),
-                        activeColor: Colors.green,
-                        activeTrackColor: Colors.green.withValues(alpha: 0.5),
-                        inactiveThumbColor: Colors.red,
-                        inactiveTrackColor: Colors.red.withValues(alpha: 0.5),
-                      ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 32),
             ),
-            // Loading message
-            if (controller.isCommandLoading.value) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
-                      ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Kontrol Mesin',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      controller.isEngineOn.value
-                          ? 'Mematikan mesin...'
-                          : 'Menyalakan mesin...',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            if (isSending)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Tooltip(
+                message: ignition == true
+                    ? 'Kirim perintah putus akses mesin'
+                    : 'Kirim perintah pulihkan akses mesin',
+                child: Switch(
+                  value: ignition == true,
+                  onChanged: ignition == null ? null : controller.toggleEngine,
                 ),
               ),
-            ],
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -1131,7 +1092,7 @@ class _CommandCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool fullWidth;
 
   const _CommandCard({
@@ -1173,7 +1134,7 @@ class _CommandCard extends StatelessWidget {
                         Text(
                           title,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1205,7 +1166,7 @@ class _CommandCard extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1234,7 +1195,7 @@ class _CommandHistorySection extends GetView<HomeController> {
         const Text(
           'Riwayat Perintah',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -1286,13 +1247,13 @@ class _CommandHistoryItemWidget extends GetView<HomeController> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: command.isSuccess
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+                  ? AppColors.success.withValues(alpha: 0.2)
+                  : AppColors.danger.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               command.isSuccess ? Icons.check : Icons.close,
-              color: command.isSuccess ? Colors.green : Colors.red,
+              color: command.isSuccess ? AppColors.success : AppColors.danger,
               size: 16,
             ),
           ),
@@ -1304,18 +1265,26 @@ class _CommandHistoryItemWidget extends GetView<HomeController> {
                 Text(
                   command.command,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontWeight: FontWeight.w500,
                     fontSize: 13,
                   ),
                 ),
                 Text(
-                  controller.formatDateTime(command.timestamp),
+                  '${command.status} · ${controller.formatDateTime(command.timestamp)}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
                   ),
                 ),
+                if (command.errorMessage case final error?)
+                  Text(
+                    error,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1379,7 +1348,7 @@ class _AkunTab extends GetView<HomeController> {
                 Text(
                   traccarApi.currentUser?.name ?? 'Pengguna',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1473,11 +1442,11 @@ class _AkunTab extends GetView<HomeController> {
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: controller.logout,
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text('Keluar', style: TextStyle(color: Colors.red)),
+              icon: const Icon(Icons.logout, color: AppColors.danger),
+              label: const Text('Keluar', style: TextStyle(color: AppColors.danger)),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: Colors.red),
+                side: const BorderSide(color: AppColors.danger),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1525,7 +1494,7 @@ class _AkunTab extends GetView<HomeController> {
                   const Text(
                     'Ubah Password',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1538,7 +1507,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: currentPasswordController,
                   obscureText: obscureCurrent.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Password Saat Ini',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1567,7 +1536,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: newPasswordController,
                   obscureText: obscureNew.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Password Baru',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1595,7 +1564,7 @@ class _AkunTab extends GetView<HomeController> {
                 () => TextField(
                   controller: confirmPasswordController,
                   obscureText: obscureConfirm.value,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Konfirmasi Password Baru',
                     labelStyle: const TextStyle(color: AppColors.textSecondary),
@@ -1632,8 +1601,8 @@ class _AkunTab extends GetView<HomeController> {
                               Get.snackbar(
                                 'Error',
                                 'Password baru tidak cocok',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
                               );
                               return;
                             }
@@ -1641,21 +1610,34 @@ class _AkunTab extends GetView<HomeController> {
                               Get.snackbar(
                                 'Error',
                                 'Password minimal 6 karakter',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
                               );
                               return;
                             }
                             isLoading.value = true;
-                            // Simulate API call
-                            await Future.delayed(const Duration(seconds: 2));
+                            final result = await Get.find<TraccarApiService>()
+                                .changePassword(
+                                  currentPassword:
+                                      currentPasswordController.text,
+                                  newPassword: newPasswordController.text,
+                                );
                             isLoading.value = false;
+                            if (!result.success) {
+                              Get.snackbar(
+                                'Gagal',
+                                result.error ?? 'Gagal mengganti password',
+                                backgroundColor: AppColors.danger,
+                                colorText: AppColors.onPrimary,
+                              );
+                              return;
+                            }
                             Get.back();
                             Get.snackbar(
                               'Berhasil',
                               'Password berhasil diubah',
-                              backgroundColor: Colors.green,
-                              colorText: Colors.white,
+                              backgroundColor: AppColors.success,
+                              colorText: AppColors.onPrimary,
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -1671,13 +1653,13 @@ class _AkunTab extends GetView<HomeController> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.black,
+                              color: AppColors.onPrimary,
                             ),
                           )
                         : const Text(
                             'Simpan Password',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: AppColors.onPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1723,7 +1705,7 @@ class _AkunTab extends GetView<HomeController> {
                   const Text(
                     'Bantuan',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1841,7 +1823,7 @@ class _AkunTab extends GetView<HomeController> {
             const Text(
               'Topan Tracking',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -1912,7 +1894,7 @@ class _FaqItem extends StatelessWidget {
         title: Text(
           question,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -1971,7 +1953,7 @@ class _ContactItem extends StatelessWidget {
                 ),
                 Text(
                   value,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 ),
               ],
             ),
@@ -2077,7 +2059,7 @@ class _MenuItem extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

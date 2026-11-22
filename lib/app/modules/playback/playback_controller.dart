@@ -1,8 +1,10 @@
 import 'dart:async';
+import '../../core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/utils/map_provider.dart';
 import '../../data/models/traccar_models.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/services/vehicle_service.dart';
@@ -12,6 +14,7 @@ class PlaybackController extends GetxController {
   final VehicleService _vehicleService = Get.find<VehicleService>();
 
   final mapController = MapController();
+  final selectedMapProvider = MapProvider.locationIQ.obs;
 
   // Selected device
   Rxn<TraccarDevice> get selectedDevice => _vehicleService.selectedDevice;
@@ -33,6 +36,10 @@ class PlaybackController extends GetxController {
   final currentPosition = Rxn<TraccarPosition>();
 
   Timer? _playbackTimer;
+  late final Worker _deviceWorker;
+  int _routeRequest = 0;
+  int? _routeDeviceId;
+  final routeMessage = RxnString();
 
   // Stats
   double get totalDistance {
@@ -66,9 +73,7 @@ class PlaybackController extends GetxController {
 
   Duration get totalDuration {
     if (routePositions.length < 2) return Duration.zero;
-    return routePositions.last.deviceTime.difference(
-      routePositions.first.deviceTime,
-    );
+    return routePositions.last.fixTime.difference(routePositions.first.fixTime);
   }
 
   Duration get movingDuration {
@@ -76,8 +81,8 @@ class PlaybackController extends GetxController {
     Duration total = Duration.zero;
     for (int i = 1; i < routePositions.length; i++) {
       if (routePositions[i].speedKmh > 1) {
-        total += routePositions[i].deviceTime.difference(
-          routePositions[i - 1].deviceTime,
+        total += routePositions[i].fixTime.difference(
+          routePositions[i - 1].fixTime,
         );
       }
     }
@@ -93,11 +98,20 @@ class PlaybackController extends GetxController {
     final now = DateTime.now();
     startDate.value = DateTime(now.year, now.month, now.day, 0, 0, 0);
     endDate.value = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    _deviceWorker = ever(selectedDevice, (device) {
+      if (_routeDeviceId != null && device?.id != _routeDeviceId) {
+        _routeRequest++;
+        _routeDeviceId = null;
+        _clearRoute();
+        isLoading.value = false;
+      }
+    });
   }
 
   @override
   void onClose() {
     _playbackTimer?.cancel();
+    _deviceWorker.dispose();
     super.onClose();
   }
 
@@ -119,10 +133,10 @@ class PlaybackController extends GetxController {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF00D4FF),
-              onPrimary: Colors.black,
-              surface: Color(0xFF1A1A1A),
-              onSurface: Colors.white,
+              primary: AppColors.primary,
+              onPrimary: AppColors.onPrimary,
+              surface: AppColors.surface,
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -151,69 +165,92 @@ class PlaybackController extends GetxController {
     }
   }
 
-  Future<void> loadRoute() async {
-    if (selectedDevice.value == null ||
-        startDate.value == null ||
-        endDate.value == null) {
-      return;
-    }
-
-    isLoading.value = true;
+  void _clearRoute() {
     stopPlayback();
     routePositions.clear();
     routePoints.clear();
-    currentIndex.value = 0;
     currentPosition.value = null;
+    routeMessage.value = null;
+  }
+
+  Future<void> loadRoute() async {
+    final device = selectedDevice.value;
+    final from = startDate.value;
+    final to = endDate.value;
+    if (device == null || from == null || to == null) return;
+
+    final request = ++_routeRequest;
+    _routeDeviceId = device.id;
+    isLoading.value = true;
+    _clearRoute();
 
     try {
       final result = await _traccarApi.getPositionHistory(
-        deviceId: selectedDevice.value!.id,
-        from: startDate.value!,
-        to: endDate.value!,
+        deviceId: device.id,
+        from: from,
+        to: to,
       );
-
-      if (result.success && result.data != null) {
-        // Sort by time
-        final positions = result.data!
-          ..sort((a, b) => a.deviceTime.compareTo(b.deviceTime));
-        routePositions.value = positions;
-        routePoints.value = positions
-            .map((p) => LatLng(p.latitude, p.longitude))
-            .toList();
-
-        if (routePoints.isNotEmpty) {
-          currentPosition.value = routePositions.first;
-          // Fit map to route
-          _fitMapToRoute();
-        }
+      if (isClosed || request != _routeRequest) return;
+      final data = result.data;
+      if (!result.success || data == null) {
+        routeMessage.value = result.error ?? 'Gagal memuat rute.';
+        return;
       }
+
+      final positions =
+          data
+              .where(
+                (point) =>
+                    point.deviceId == device.id &&
+                    point.valid &&
+                    !point.outdated &&
+                    point.latitude.isFinite &&
+                    point.longitude.isFinite &&
+                    point.latitude.abs() <= 90 &&
+                    point.longitude.abs() <= 180,
+              )
+              .toList()
+            ..sort((a, b) {
+              final order = a.fixTime.compareTo(b.fixTime);
+              return order == 0 ? a.id.compareTo(b.id) : order;
+            });
+
+      if (positions.isEmpty) {
+        routeMessage.value = 'Belum ada titik GPS valid pada periode ini.';
+        return;
+      }
+      routePositions.assignAll(positions);
+      routePoints.assignAll(
+        positions.map((point) => LatLng(point.latitude, point.longitude)),
+      );
+      currentPosition.value = positions.first;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!isClosed && request == _routeRequest) _fitMapToRoute();
+      });
     } catch (e) {
       debugPrint('Error loading route: $e');
-      Get.snackbar(
-        'Error',
-        'Gagal memuat rute: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.9),
-        colorText: Colors.white,
-      );
+      if (!isClosed && request == _routeRequest) {
+        routeMessage.value = 'Gagal memuat rute.';
+      }
+    } finally {
+      if (!isClosed && request == _routeRequest) isLoading.value = false;
     }
-
-    isLoading.value = false;
   }
 
   void _fitMapToRoute() {
     if (routePoints.isEmpty) return;
 
     try {
+      if (routePoints.length == 1) {
+        mapController.move(routePoints.first, 16);
+        return;
+      }
       final bounds = LatLngBounds.fromPoints(routePoints);
       mapController.fitCamera(
         CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
       );
     } catch (e) {
-      // Fallback to first point
-      if (routePoints.isNotEmpty) {
-        mapController.move(routePoints.first, 14);
-      }
+      debugPrint('Unable to fit the Playback map: $e');
     }
   }
 

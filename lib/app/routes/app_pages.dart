@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/login/login_binding.dart';
 import '../modules/login/login_view.dart';
@@ -29,7 +28,6 @@ class AppPages {
     GetPage(
       name: Routes.splash,
       page: () => const SplashView(),
-      binding: SplashBinding(),
     ),
     GetPage(
       name: Routes.login,

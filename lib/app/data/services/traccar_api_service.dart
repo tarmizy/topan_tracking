@@ -108,6 +108,124 @@ class TraccarApiService extends GetxService {
     positions.clear();
   }
 
+  /// Daftar akun baru (memerlukan opsi "registration" aktif di server Traccar).
+  Future<TraccarApiResponse<bool>> registerUser({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/users'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'name': name, 'email': email, 'password': password}),
+      );
+      if (response.statusCode == 200) {
+        return TraccarApiResponse(success: true, data: true);
+      }
+      final body = response.body.toLowerCase();
+      if (body.contains('duplicate') || body.contains('unique')) {
+        return TraccarApiResponse(success: false, error: 'Email sudah terdaftar.');
+      }
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403) {
+        return TraccarApiResponse(
+          success: false,
+          error: 'Pendaftaran mandiri belum dibuka. Hubungi tim Topan untuk dibuatkan akun.',
+        );
+      }
+      return TraccarApiResponse(
+        success: false,
+        error: 'Pendaftaran gagal (${response.statusCode}).',
+      );
+    } catch (e) {
+      return TraccarApiResponse(success: false, error: 'Koneksi gagal: $e');
+    }
+  }
+
+  /// Ganti kata sandi akun yang sedang masuk.
+  /// Kata sandi lama diverifikasi dulu dengan login ulang.
+  Future<TraccarApiResponse<bool>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final email = _currentUser?.email;
+    if (email == null) {
+      return TraccarApiResponse(success: false, error: 'Sesi berakhir, silakan masuk ulang.');
+    }
+    try {
+      final verify = await login(email, currentPassword);
+      if (!verify.success) {
+        return TraccarApiResponse(success: false, error: 'Kata sandi lama salah.');
+      }
+      final session = await http.get(
+        Uri.parse('$baseUrl/api/session'),
+        headers: _getHeaders(),
+      );
+      if (session.statusCode != 200) {
+        return TraccarApiResponse(success: false, error: 'Gagal memuat data akun.');
+      }
+      final user = json.decode(session.body) as Map<String, dynamic>;
+      user['password'] = newPassword;
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/users/${user['id']}'),
+        headers: _getHeaders(),
+        body: json.encode(user),
+      );
+      if (response.statusCode == 200) {
+        return TraccarApiResponse(success: true, data: true);
+      }
+      return TraccarApiResponse(
+        success: false,
+        error: 'Gagal mengganti kata sandi (${response.statusCode}).',
+      );
+    } catch (e) {
+      return TraccarApiResponse(success: false, error: 'Koneksi gagal: $e');
+    }
+  }
+
+  /// Buat token berbagi lokasi live untuk satu kendaraan.
+  /// Server Traccar mengembalikan token yang berlaku sampai [expiration].
+  Future<TraccarApiResponse<String>> shareDevice({
+    required int deviceId,
+    required DateTime expiration,
+  }) async {
+    try {
+      // Traccar hanya menerima format UTC "YYYY-MM-DDTHH:MM:SSZ".
+      final exp = '${expiration.toUtc().toIso8601String().split('.').first}Z';
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/devices/share'),
+        headers: {
+          ..._getHeaders(),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'deviceId=$deviceId&expiration=${Uri.encodeComponent(exp)}',
+      );
+      final token = response.body.trim();
+      if (response.statusCode == 200 && token.isNotEmpty) {
+        return TraccarApiResponse(success: true, data: token);
+      }
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403) {
+        return TraccarApiResponse(
+          success: false,
+          error: 'Fitur berbagi lokasi belum diaktifkan di server.',
+        );
+      }
+      return TraccarApiResponse(
+        success: false,
+        error: 'Gagal membuat link (${response.statusCode}).',
+      );
+    } catch (e) {
+      return TraccarApiResponse(success: false, error: 'Koneksi gagal: $e');
+    }
+  }
+
+  /// Link yang bisa dibuka siapa saja untuk melihat lokasi live.
+  String shareLink(String token) => '$baseUrl/?token=$token';
+
   // ==================== DEVICES ====================
 
   Future<TraccarApiResponse<List<TraccarDevice>>> getDevices() async {
@@ -549,7 +667,7 @@ class TraccarApiService extends GetxService {
 
   // ==================== COMMANDS ====================
 
-  Future<TraccarApiResponse<bool>> sendCommand({
+  Future<TraccarApiResponse<TraccarCommandDelivery>> sendCommand({
     required int deviceId,
     required String type,
     Map<String, dynamic>? attributes,
@@ -567,15 +685,33 @@ class TraccarApiService extends GetxService {
         body: json.encode(command),
       );
 
-      if (response.statusCode == 200) {
-        return TraccarApiResponse(success: true, data: true);
-      }
+      return switch (response.statusCode) {
+        200 => TraccarApiResponse(
+          success: true,
+          data: TraccarCommandDelivery.sent,
+        ),
+        202 => TraccarApiResponse(
+          success: true,
+          data: TraccarCommandDelivery.queued,
+        ),
+        400 => TraccarApiResponse(
+          success: false,
+          error: 'Server menolak perintah. Periksa dukungan GPS dan izin akun.',
+        ),
+        401 || 403 => TraccarApiResponse(
+          success: false,
+          error: 'Sesi atau izin akun tidak mengizinkan perintah ini.',
+        ),
+        _ => TraccarApiResponse(
+          success: false,
+          error: 'Gagal mengirim perintah (HTTP ${response.statusCode}).',
+        ),
+      };
+    } catch (e) {
       return TraccarApiResponse(
         success: false,
-        error: 'Gagal mengirim perintah',
+        error: 'Koneksi ke server gagal.',
       );
-    } catch (e) {
-      return TraccarApiResponse(success: false, error: 'Error: $e');
     }
   }
 

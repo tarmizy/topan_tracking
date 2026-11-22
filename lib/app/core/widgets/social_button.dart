@@ -33,14 +33,14 @@ class SocialButton extends StatelessWidget {
           children: [
             Icon(
               isApple ? Icons.apple : Icons.g_mobiledata,
-              color: isApple ? Colors.white : Colors.red,
+              color: isApple ? AppColors.textPrimary : AppColors.danger,
               size: 24,
             ),
             const SizedBox(width: 8),
             Text(
               text,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
