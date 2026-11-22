@@ -153,7 +153,7 @@ jobs:
           whatsNewDirectory: play/whatsnew
           # Ubah lewat Settings > Variables: PLAY_TRACK (production/internal/alpha/beta),
           # PLAY_RELEASE_STATUS (completed/draft/inProgress).
-          track: ${{ vars.PLAY_TRACK || 'production' }}
+          tracks: ${{ vars.PLAY_TRACK || 'production' }}
           status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
 
       - name: Install the Google Play API client
