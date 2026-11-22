@@ -22,13 +22,14 @@ jobs:
     steps:
       - name: Download and verify the existing APK
         run: |
-          gh run download 44988122422 --name topan-tracking-android --dir apk
-          echo '0635c3c99ccddc7e683c3ecadc43ef883de225f25f6db2877cd8c14734070544  apk/app-release.apk' | sha256sum --check
+          gh run download 45021180691 --name topan-tracking-android --dir apk
+          test "$(gh run view 45021180691 --json headSha,conclusion --jq '.headSha + " " + .conclusion')" = '934df7113486d72f3ca1f737bf0c0536f1698da9 success'
+          test -s apk/app-release.apk
 
       - name: Publish the APK as a prerelease asset
         run: |
-          gh release create android-v1.0.0-test.1 apk/app-release.apk \
-            --target f7cbd5eeb7f1655a4395f59289abe71fa6804c2f \
+          gh release create android-v1.0.0-test.2 apk/app-release.apk \
+            --target 934df7113486d72f3ca1f737bf0c0536f1698da9 \
             --title 'Topan Tracking 1.0.0 Android (uji coba)' \
-            --notes 'APK dari GitHub Actions run #44988122422 untuk uji coba Android.' \
+            --notes 'Perbaikan peta Playback. APK dari GitHub Actions run #45021180691.' \
             --prerelease --latest=false
