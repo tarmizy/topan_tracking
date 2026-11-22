@@ -1,0 +1,34 @@
+name: Publish Android test APK
+
+on:
+  push:
+    branches:
+      - release/android-apk-v1.0.0
+    paths:
+      - .github/workflows/publish-android-apk.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Download and verify the existing APK
+        run: |
+          gh run download 44988122422 --name topan-tracking-android --dir apk
+          echo '0635c3c99ccddc7e683c3ecadc43ef883de225f25f6db2877cd8c14734070544  apk/app-release.apk' | sha256sum --check
+
+      - name: Publish the APK as a prerelease asset
+        run: |
+          gh release create android-v1.0.0-test.1 apk/app-release.apk \
+            --target f7cbd5eeb7f1655a4395f59289abe71fa6804c2f \
+            --title 'Topan Tracking 1.0.0 Android (uji coba)' \
+            --notes 'APK dari GitHub Actions run #44988122422 untuk uji coba Android.' \
+            --prerelease --latest=false
