@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - build/android-apk
+    tags:
+      - 'android-v*'
 
 permissions:
   contents: read
@@ -39,8 +41,34 @@ jobs:
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Build release APK
+      - name: Build APK for testing
+        if: github.ref_type != 'tag'
         run: flutter build apk --release --no-pub
+
+      - name: Build APK signed with the release keystore
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          TOPAN_ANDROID_KEYSTORE_B64: ${{ secrets.TOPAN_ANDROID_KEYSTORE_B64 }}
+          TOPAN_ANDROID_STORE_PASSWORD: ${{ secrets.TOPAN_ANDROID_STORE_PASSWORD }}
+          TOPAN_ANDROID_KEY_ALIAS: ${{ secrets.TOPAN_ANDROID_KEY_ALIAS }}
+          TOPAN_ANDROID_KEY_PASSWORD: ${{ secrets.TOPAN_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^android-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Use a release tag such as android-v1.0.1"
+            exit 1
+          fi
+          : "${TOPAN_ANDROID_KEYSTORE_B64:?Set the release keystore secret}"
+          : "${TOPAN_ANDROID_STORE_PASSWORD:?Set the keystore password secret}"
+          : "${TOPAN_ANDROID_KEY_ALIAS:?Set the release key alias secret}"
+          : "${TOPAN_ANDROID_KEY_PASSWORD:?Set the release key password secret}"
+          export TOPAN_ANDROID_KEYSTORE
+          TOPAN_ANDROID_KEYSTORE="$(mktemp "$RUNNER_TEMP/topan-release.XXXXXX")"
+          trap 'rm -f "$TOPAN_ANDROID_KEYSTORE"' EXIT
+          base64 --decode <<< "$TOPAN_ANDROID_KEYSTORE_B64" > "$TOPAN_ANDROID_KEYSTORE"
+          unset TOPAN_ANDROID_KEYSTORE_B64
+          flutter build apk --release --no-pub \
+            --build-name="${GITHUB_REF_NAME#android-v}" --build-number="$GITHUB_RUN_NUMBER"
 
       - name: Verify APK signature
         run: '"$ANDROID_HOME/build-tools/36.0.0/apksigner" verify build/app/outputs/flutter-apk/app-release.apk'
@@ -52,3 +80,38 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           compression-level: 0
+
+  publish-drive:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: topan-android-drive-release
+      cancel-in-progress: false
+
+    steps:
+      - name: Check out the release script
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Download the verified APK
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: topan-tracking-android
+          path: apk
+
+      - name: Install the Google Drive API client
+        run: |
+          python3 -m venv "$RUNNER_TEMP/drive-client"
+          "$RUNNER_TEMP/drive-client/bin/pip" install google-api-python-client==2.202.0
+
+      - name: Update the Google Drive release file
+        env:
+          TOPAN_DRIVE_OAUTH: ${{ secrets.TOPAN_DRIVE_OAUTH }}
+          TOPAN_DRIVE_FILE_ID: ${{ vars.TOPAN_DRIVE_FILE_ID }}
+        run: |
+          "$RUNNER_TEMP/drive-client/bin/python" scripts/drive_release.py publish \
+            --apk apk/app-release.apk --repo "$GITHUB_REPOSITORY" \
+            --tag "$GITHUB_REF_NAME" --version-code "$GITHUB_RUN_NUMBER"

@@ -5,6 +5,8 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseKeystore = providers.environmentVariable("TOPAN_ANDROID_KEYSTORE")
+
 android {
     namespace = "com.topan.topan_tracking"
     compileSdk = flutter.compileSdkVersion
@@ -30,11 +32,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseKeystore.isPresent) {
+            create("topanRelease") {
+                storeFile = file(releaseKeystore.get())
+                storePassword = providers.environmentVariable("TOPAN_ANDROID_STORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("TOPAN_ANDROID_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("TOPAN_ANDROID_KEY_PASSWORD").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(
+                if (releaseKeystore.isPresent) "topanRelease" else "debug"
+            )
         }
     }
 }
