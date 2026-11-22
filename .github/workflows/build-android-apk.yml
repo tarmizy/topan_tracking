@@ -2,7 +2,8 @@ name: Build Android
 
 # Alur rilis:
 # - push ke build/android-apk  -> APK uji coba (ditandatangani kunci debug)
-# - push ke main               -> APK + AAB bertanda tangan rilis, AAB dikirim ke Play Store
+# - push ke main               -> APK + AAB bertanda tangan rilis, AAB dikirim ke Play Store,
+#                                 lalu judul/deskripsi toko disinkronkan dari play/listing/
 # - tag android-vX.Y.Z         -> APK bertanda tangan rilis, diunggah ke Google Drive
 on:
   workflow_dispatch:
@@ -116,13 +117,23 @@ jobs:
         id: creds
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          JSON_IN_VARIABLES: ${{ vars.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         run: |
+          if [[ "$JSON_IN_VARIABLES" == "true" ]]; then
+            echo "::error::PLAY_SERVICE_ACCOUNT_JSON is stored as a plain Variable, which anyone with read access can see. Move it to Settings > Secrets and variables > Actions > Secrets, then delete the Variable."
+          fi
           if [[ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]]; then
-            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON is not set; skipping the Google Play upload."
+            echo "::warning::The PLAY_SERVICE_ACCOUNT_JSON secret is not set; skipping the Google Play upload."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Check out store listing and release notes
+        if: steps.creds.outputs.ready == 'true'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Download the signed AAB
         if: steps.creds.outputs.ready == 'true'
@@ -138,10 +149,26 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.topan.topan_tracking
           releaseFiles: aab/app-release.aab
+          # Catatan rilis "Yang baru" diambil dari play/whatsnew/whatsnew-id-ID.
+          whatsNewDirectory: play/whatsnew
           # Ubah lewat Settings > Variables: PLAY_TRACK (production/internal/alpha/beta),
           # PLAY_RELEASE_STATUS (completed/draft/inProgress).
           track: ${{ vars.PLAY_TRACK || 'production' }}
           status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
+
+      - name: Install the Google Play API client
+        if: steps.creds.outputs.ready == 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/play-client"
+          "$RUNNER_TEMP/play-client/bin/pip" install google-api-python-client==2.202.0
+
+      - name: Sync the store listing (judul & deskripsi)
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          "$RUNNER_TEMP/play-client/bin/python" -I scripts/play_listing.py \
+            --package com.topan.topan_tracking --listing-dir play/listing
 
   publish-drive:
     if: github.ref_type == 'tag'
