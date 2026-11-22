@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
+import '../../core/utils/support.dart';
 import 'package:get/get.dart';
 import '../../data/services/traccar_api_service.dart';
 import '../../data/models/traccar_models.dart';
@@ -27,10 +29,137 @@ class DriversController extends GetxController {
   }
 
   // Calculate total rental for a driver
-  double calculateTotalRental(TraccarDriver driver) {
-    if (!driver.isActive || driver.rentalStartDate == null) return 0;
-    final days = DateTime.now().difference(driver.rentalStartDate!).inDays + 1;
-    return days * driver.dailyRate;
+  double calculateTotalRental(TraccarDriver driver) =>
+      driver.rental?.total ?? 0;
+
+  // ==================== SEWA ====================
+
+  /// Dialog memilih lama sewa (hari). Null bila dibatalkan.
+  Future<int?> _askRentalDays({required String title, int initial = 1}) {
+    final days = initial.obs;
+    return Get.dialog<int>(
+      AlertDialog(
+        title: Text(title),
+        content: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pengingat otomatis muncul bila unit belum kembali setelah masa sewa habis.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [1, 2, 3, 7, 14, 30]
+                    .map(
+                      (d) => ChoiceChip(
+                        label: Text('$d hari'),
+                        selected: days.value == d,
+                        selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                        onSelected: (_) => days.value = d,
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: days.value > 1 ? () => days.value-- : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text(
+                    '${days.value} hari',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  IconButton(
+                    onPressed: () => days.value++,
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Get.back(result: days.value),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tambah masa sewa yang sedang berjalan.
+  Future<void> extendRental(TraccarDriver driver) async {
+    final days = await _askRentalDays(title: 'Perpanjang sewa');
+    if (days == null) return;
+    final base = driver.rentalEndDate != null &&
+            driver.rentalEndDate!.isAfter(DateTime.now())
+        ? driver.rentalEndDate!
+        : DateTime.now();
+    final attrs = Map<String, dynamic>.from(driver.attributes ?? {});
+    attrs['rentalEndDate'] = base.add(Duration(days: days)).toIso8601String();
+    final result = await _traccarApi.updateDriver(driver.copyWith(attributes: attrs));
+    if (result.success) {
+      await loadDrivers();
+      Get.snackbar(
+        'Berhasil',
+        'Sewa diperpanjang $days hari',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.success,
+        colorText: AppColors.onPrimary,
+      );
+    }
+  }
+
+  /// Teks nota sewa untuk WhatsApp.
+  String buildInvoiceText(TraccarDriver driver) {
+    final r = driver.rental;
+    final owner = _traccarApi.currentUser?.name;
+    final lines = <String>[
+      '*NOTA SEWA KENDARAAN*',
+      if (owner != null && owner.isNotEmpty) owner,
+      '',
+      'Penyewa: ${driver.name}',
+      'Kendaraan: ${getDeviceName(driver.deviceId)}',
+      if (r != null) ...[
+        'Mulai: ${formatDateTimeId(r.start)}',
+        if (r.end != null) 'Selesai: ${formatDateTimeId(r.end!)}',
+        'Durasi: ${r.billedDays} hari',
+        'Tarif: ${formatRupiah(driver.dailyRate)}/hari',
+        if (r.isOverdue) 'Keterlambatan: ${formatDurationId(r.overdueBy)}',
+        '',
+        '*Total: ${formatRupiah(r.total)}*',
+      ] else
+        'Tarif: ${formatRupiah(driver.dailyRate)}/hari',
+      '',
+      'Terima kasih telah menyewa.',
+      '_Dikirim lewat aplikasi Topan_',
+    ];
+    return lines.join('\n');
+  }
+
+  Future<void> sendInvoice(TraccarDriver driver) =>
+      sendWhatsApp(toWhatsAppNumber(driver.phone), buildInvoiceText(driver));
+
+  Future<void> sendReturnReminder(TraccarDriver driver) {
+    final r = driver.rental;
+    final end = r?.end != null ? formatDateTimeId(r!.end!) : '-';
+    return sendWhatsApp(
+      toWhatsAppNumber(driver.phone),
+      'Halo ${driver.name}, masa sewa ${getDeviceName(driver.deviceId)} '
+      'berakhir pada $end. Mohon segera dikembalikan, atau balas pesan ini '
+      'bila ingin memperpanjang. Terima kasih.',
+    );
   }
 
   // Get device name by id
@@ -241,9 +370,18 @@ class DriversController extends GetxController {
     newAttributes['isActive'] = newIsActive;
 
     if (newIsActive) {
-      newAttributes['rentalStartDate'] = DateTime.now().toIso8601String();
+      final days = await _askRentalDays(title: 'Mulai sewa');
+      if (days == null) {
+        isLoading.value = false;
+        return;
+      }
+      final start = DateTime.now();
+      newAttributes['rentalStartDate'] = start.toIso8601String();
+      newAttributes['rentalEndDate'] =
+          start.add(Duration(days: days)).toIso8601String();
     } else {
       newAttributes.remove('rentalStartDate');
+      newAttributes.remove('rentalEndDate');
     }
 
     final updatedDriver = driver.copyWith(attributes: newAttributes);
@@ -498,10 +636,7 @@ class DriversController extends GetxController {
   }
 
   void showDriverDetail(TraccarDriver driver) {
-    final totalRental = calculateTotalRental(driver);
-    final rentalDays = driver.rentalStartDate != null
-        ? DateTime.now().difference(driver.rentalStartDate!).inDays + 1
-        : 0;
+    final rental = driver.rental;
 
     Get.bottomSheet(
       Container(
@@ -606,13 +741,14 @@ class DriversController extends GetxController {
                 'Rp ${_formatNumber(driver.dailyRate)}',
               ),
 
-              if (driver.isActive && driver.rentalStartDate != null) ...[
-                const Divider(color: AppColors.textSecondary, height: 32),
+              if (rental != null) ...[
+                const Divider(color: AppColors.border, height: 32),
                 const Text(
                   'LAPORAN SEWA',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: AppColors.primaryDark,
                     fontSize: 12,
+                    letterSpacing: 1,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -621,63 +757,100 @@ class DriversController extends GetxController {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.background,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
+                      color: rental.isOverdue
+                          ? AppColors.danger.withValues(alpha: 0.5)
+                          : AppColors.border,
                     ),
                   ),
                   child: Column(
                     children: [
+                      _rentalRow('Mulai sewa', formatDateTimeId(rental.start)),
+                      if (rental.end != null)
+                        _rentalRow('Selesai sewa', formatDateTimeId(rental.end!)),
+                      _rentalRow('Durasi ditagih', '${rental.billedDays} hari'),
+                      if (rental.end != null)
+                        _rentalRow(
+                          'Status',
+                          rental.isOverdue
+                              ? 'Terlambat ${formatDurationId(rental.overdueBy)}'
+                              : 'Sisa ${formatDurationId(rental.remaining)}',
+                          color: rental.isOverdue
+                              ? AppColors.danger
+                              : AppColors.success,
+                        ),
+                      const Divider(color: AppColors.border, height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Mulai Sewa',
-                            style: TextStyle(color: AppColors.textSecondary),
-                          ),
-                          Text(
-                            _formatDate(driver.rentalStartDate!),
-                            style: const TextStyle(color: AppColors.textPrimary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Durasi',
-                            style: TextStyle(color: AppColors.textSecondary),
-                          ),
-                          Text(
-                            '$rentalDays hari',
-                            style: const TextStyle(color: AppColors.textPrimary),
-                          ),
-                        ],
-                      ),
-                      const Divider(color: AppColors.textSecondary, height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Biaya',
+                            'Total biaya',
                             style: TextStyle(
                               color: AppColors.textSecondary,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
-                            'Rp ${_formatNumber(totalRental)}',
+                            formatRupiah(rental.total),
                             style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => sendInvoice(driver),
+                    icon: const Icon(Icons.receipt_long, size: 20),
+                    label: const Text('Kirim Nota via WhatsApp'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Get.back();
+                          extendRental(driver);
+                        },
+                        icon: const Icon(Icons.more_time, color: AppColors.primaryDark),
+                        label: const Text(
+                          'Perpanjang',
+                          style: TextStyle(color: AppColors.primaryDark),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    if (rental.isOverdue) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => sendReturnReminder(driver),
+                          icon: const Icon(Icons.notifications_active, color: AppColors.danger),
+                          label: const Text(
+                            'Ingatkan',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.danger.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
 
@@ -733,6 +906,25 @@ class DriversController extends GetxController {
     );
   }
 
+  Widget _rentalRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? AppColors.textPrimary,
+              fontWeight: color != null ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailRow(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -762,7 +954,4 @@ class DriversController extends GetxController {
         );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
 }

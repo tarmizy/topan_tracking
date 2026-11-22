@@ -185,6 +185,47 @@ class TraccarApiService extends GetxService {
     }
   }
 
+  /// Buat token berbagi lokasi live untuk satu kendaraan.
+  /// Server Traccar mengembalikan token yang berlaku sampai [expiration].
+  Future<TraccarApiResponse<String>> shareDevice({
+    required int deviceId,
+    required DateTime expiration,
+  }) async {
+    try {
+      // Traccar hanya menerima format UTC "YYYY-MM-DDTHH:MM:SSZ".
+      final exp = '${expiration.toUtc().toIso8601String().split('.').first}Z';
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/devices/share'),
+        headers: {
+          ..._getHeaders(),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'deviceId=$deviceId&expiration=${Uri.encodeComponent(exp)}',
+      );
+      final token = response.body.trim();
+      if (response.statusCode == 200 && token.isNotEmpty) {
+        return TraccarApiResponse(success: true, data: token);
+      }
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403) {
+        return TraccarApiResponse(
+          success: false,
+          error: 'Fitur berbagi lokasi belum diaktifkan di server.',
+        );
+      }
+      return TraccarApiResponse(
+        success: false,
+        error: 'Gagal membuat link (${response.statusCode}).',
+      );
+    } catch (e) {
+      return TraccarApiResponse(success: false, error: 'Koneksi gagal: $e');
+    }
+  }
+
+  /// Link yang bisa dibuka siapa saja untuk melihat lokasi live.
+  String shareLink(String token) => '$baseUrl/?token=$token';
+
   // ==================== DEVICES ====================
 
   Future<TraccarApiResponse<List<TraccarDevice>>> getDevices() async {

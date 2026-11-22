@@ -13,3 +13,12 @@ class TopanSupport {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
+
+/// Membuka WhatsApp ke nomor tertentu (atau pilih kontak bila [number] null).
+Future<bool> sendWhatsApp(String? number, String message) {
+  final text = Uri.encodeComponent(message);
+  final uri = Uri.parse(
+    number == null ? 'https://wa.me/?text=$text' : 'https://wa.me/$number?text=$text',
+  );
+  return launchUrl(uri, mode: LaunchMode.externalApplication);
+}

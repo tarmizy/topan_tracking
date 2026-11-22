@@ -318,15 +318,25 @@ class _DriverCard extends GetView<DriversController> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: driver.isActive
+                    color: driver.isOverdue
+                        ? AppColors.danger.withValues(alpha: 0.15)
+                        : driver.isActive
                         ? AppColors.success.withValues(alpha: 0.2)
                         : AppColors.textSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    driver.isActive ? 'Aktif' : 'Nonaktif',
+                    driver.isOverdue
+                        ? 'Terlambat'
+                        : driver.isActive
+                        ? 'Aktif'
+                        : 'Nonaktif',
                     style: TextStyle(
-                      color: driver.isActive ? AppColors.success : AppColors.textSecondary,
+                      color: driver.isOverdue
+                          ? AppColors.danger
+                          : driver.isActive
+                          ? AppColors.success
+                          : AppColors.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),

@@ -1,5 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
+import '../../core/utils/support.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
@@ -455,7 +458,7 @@ class HomeController extends GetxController {
                   child: _buildActionButton(
                     icon: Icons.route,
                     label: 'Playback',
-                    color: Colors.purple,
+                    color: AppColors.primaryDark,
                     onTap: () {
                       Get.back();
                       selectDevice(device);
@@ -465,7 +468,164 @@ class HomeController extends GetxController {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  shareLiveLocation(device);
+                },
+                icon: const Icon(Icons.share_location, size: 20),
+                label: const Text('Bagikan Lokasi Live'),
+              ),
+            ),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== BAGIKAN LOKASI LIVE ====================
+
+  static const _shareDurations = <String, Duration>{
+    '1 jam': Duration(hours: 1),
+    '6 jam': Duration(hours: 6),
+    '24 jam': Duration(hours: 24),
+    '3 hari': Duration(days: 3),
+    '7 hari': Duration(days: 7),
+  };
+
+  /// Buat link lokasi live untuk keluarga atau penyewa, lalu kirim lewat WhatsApp.
+  Future<void> shareLiveLocation(TraccarDevice device) async {
+    final duration = await Get.bottomSheet<Duration>(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bagikan lokasi ${device.name}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Penerima bisa melihat posisi kendaraan secara langsung tanpa '
+              'perlu akun. Link otomatis tidak berlaku setelah waktunya habis.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Berlaku selama',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _shareDurations.entries
+                  .map(
+                    (e) => ActionChip(
+                      label: Text(e.key),
+                      onPressed: () => Get.back(result: e.value),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (duration == null) return;
+
+    final expiration = DateTime.now().add(duration);
+    final result = await _traccarApi.shareDevice(
+      deviceId: device.id,
+      expiration: expiration,
+    );
+    if (!result.success || result.data == null) {
+      _showErrorSnackbar(result.error ?? 'Gagal membuat link');
+      return;
+    }
+    final link = _traccarApi.shareLink(result.data!);
+    final message =
+        'Pantau lokasi ${device.name} secara langsung lewat Topan:\n$link\n\n'
+        'Link berlaku sampai ${formatDateTimeId(expiration)}.';
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success),
+                SizedBox(width: 8),
+                Text(
+                  'Link lokasi live siap',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Berlaku sampai ${formatDateTimeId(expiration)}',
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: SelectableText(
+                link,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => sendWhatsApp(null, message),
+                icon: const Icon(Icons.chat, size: 20),
+                label: const Text('Kirim via WhatsApp'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  _showSuccessSnackbar('Link disalin');
+                },
+                icon: const Icon(Icons.copy, color: AppColors.primaryDark),
+                label: const Text(
+                  'Salin link',
+                  style: TextStyle(color: AppColors.primaryDark),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
           ],
         ),
       ),

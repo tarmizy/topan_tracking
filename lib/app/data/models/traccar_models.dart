@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../core/utils/rental.dart';
 
 // Traccar User Model
 class TraccarUser {
@@ -502,6 +503,22 @@ class TraccarDriver {
     if (dateStr == null) return null;
     return DateTime.tryParse(dateStr);
   }
+
+  /// Batas akhir sewa yang disepakati (opsional).
+  DateTime? get rentalEndDate {
+    final dateStr = attributes?['rentalEndDate'];
+    if (dateStr == null) return null;
+    return DateTime.tryParse(dateStr);
+  }
+
+  /// Perhitungan sewa berjalan; null bila tidak sedang menyewa.
+  RentalCalc? get rental {
+    final start = rentalStartDate;
+    if (!isActive || start == null) return null;
+    return RentalCalc(start: start, end: rentalEndDate, dailyRate: dailyRate);
+  }
+
+  bool get isOverdue => rental?.isOverdue ?? false;
 
   factory TraccarDriver.fromJson(Map<String, dynamic> json) {
     return TraccarDriver(

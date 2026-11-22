@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/traccar_models.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/rental.dart';
 import 'traccar_api_service.dart';
 
 class VehicleService extends GetxService {
@@ -29,11 +31,11 @@ class VehicleService extends GetxService {
     super.onInit();
     _traccarApi = Get.find<TraccarApiService>();
 
-    // Segarkan notifikasi setiap 60 detik selama aplikasi terbuka.
+    // Segarkan notifikasi & cek sewa terlambat setiap 60 detik.
     _eventsTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (_traccarApi.isConnected.value && selectedDevice.value != null) {
-        loadEvents();
-      }
+      if (!_traccarApi.isConnected.value) return;
+      if (selectedDevice.value != null) loadEvents();
+      checkOverdueRentals();
     });
 
     // Listen to device updates from WebSocket
@@ -107,6 +109,7 @@ class VehicleService extends GetxService {
         debugPrint('Loading events...');
         try {
           await loadEvents();
+          await checkOverdueRentals();
         } catch (e) {
           debugPrint('Events load failed (non-critical): $e');
         }
@@ -180,7 +183,7 @@ class VehicleService extends GetxService {
       );
 
       if (result.success && result.data != null) {
-        notifications.value = result.data!
+        _eventItems = result.data!
             .map(
               (e) => NotificationItem(
                 id: e.id.toString(),
@@ -191,13 +194,63 @@ class VehicleService extends GetxService {
               ),
             )
             .toList();
-        debugPrint('Events loaded: ${notifications.length} events');
+        _publishNotifications();
+        debugPrint('Events loaded: ${_eventItems.length} events');
       } else {
         debugPrint('Events failed: ${result.error}');
       }
     } catch (e) {
       debugPrint('Error loading events: $e');
     }
+  }
+
+  // ==================== PENGINGAT SEWA ====================
+
+  List<NotificationItem> _eventItems = [];
+  List<NotificationItem> _rentalAlerts = [];
+  final Set<int> _announcedOverdue = {};
+
+  void _publishNotifications() {
+    final readIds = notifications.where((n) => n.isRead).map((n) => n.id).toSet();
+    notifications.value = [..._rentalAlerts, ..._eventItems]
+        .map((n) => readIds.contains(n.id) ? (n..isRead = true) : n)
+        .toList();
+  }
+
+  /// Cari penyewa yang masa sewanya sudah habis tapi unit belum dikembalikan.
+  Future<void> checkOverdueRentals() async {
+    final result = await _traccarApi.getDrivers();
+    if (!result.success || result.data == null) return;
+    final alerts = <NotificationItem>[];
+    for (final d in result.data!) {
+      final r = d.rental;
+      if (r == null || !r.isOverdue || d.id == null) continue;
+      final unit = _traccarApi.devices
+              .firstWhereOrNull((v) => v.id == d.deviceId)
+              ?.name ??
+          'Unit';
+      alerts.add(
+        NotificationItem(
+          id: 'rental-${d.id}',
+          title: 'Sewa terlambat',
+          message: '$unit · ${d.name} · lewat ${formatDurationId(r.overdueBy)}',
+          type: 'alert',
+          timestamp: r.end!,
+        ),
+      );
+      if (_announcedOverdue.add(d.id!)) {
+        Get.snackbar(
+          'Sewa terlambat',
+          '$unit (${d.name}) belum kembali. Lewat ${formatDurationId(r.overdueBy)}.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppColors.danger,
+          colorText: AppColors.onPrimary,
+          duration: const Duration(seconds: 5),
+        );
+      }
+    }
+    _rentalAlerts = alerts;
+    _publishNotifications();
   }
 
   /// Keterangan notifikasi: nama kendaraan + detail yang relevan.

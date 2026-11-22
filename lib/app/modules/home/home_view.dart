@@ -979,6 +979,19 @@ class _PerintahTab extends GetView<HomeController> {
               fullWidth: true,
             );
           }),
+          const SizedBox(height: 16),
+          // Share live location
+          _CommandCard(
+            icon: Icons.share_location,
+            title: 'Bagikan Lokasi Live',
+            subtitle: 'Kirim link lokasi ke keluarga atau penyewa',
+            color: AppColors.success,
+            onTap: () {
+              final device = controller.selectedDevice.value;
+              if (device != null) controller.shareLiveLocation(device);
+            },
+            fullWidth: true,
+          ),
           const SizedBox(height: 24),
           // Command History
           _CommandHistorySection(),
