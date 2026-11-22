@@ -22,14 +22,14 @@ jobs:
     steps:
       - name: Download and verify the existing APK
         run: |
-          gh run download 45021180691 --name topan-tracking-android --dir apk
-          test "$(gh run view 45021180691 --json headSha,conclusion --jq '.headSha + " " + .conclusion')" = '934df7113486d72f3ca1f737bf0c0536f1698da9 success'
+          gh run download 45024735966 --name topan-tracking-android --dir apk
+          test "$(gh run view 45024735966 --json headSha,conclusion --jq '.headSha + " " + .conclusion')" = '8e68136954b1cd645fb1be0520fceb111e1c4435 success'
           test -s apk/app-release.apk
 
       - name: Publish the APK as a prerelease asset
         run: |
-          gh release create android-v1.0.0-test.2 apk/app-release.apk \
-            --target 934df7113486d72f3ca1f737bf0c0536f1698da9 \
+          gh release create android-v1.0.0-test.3 apk/app-release.apk \
+            --target 8e68136954b1cd645fb1be0520fceb111e1c4435 \
             --title 'Topan Tracking 1.0.0 Android (uji coba)' \
-            --notes 'Perbaikan peta Playback. APK dari GitHub Actions run #45021180691.' \
+            --notes 'LocationIQ sebagai peta default Playback, perbaikan layar login ganda, simpan kredensial terenkripsi, dan nonaktifkan logout karena tidak aktif. APK dari GitHub Actions run #45024735966.' \
             --prerelease --latest=false
