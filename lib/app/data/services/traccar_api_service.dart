@@ -11,8 +11,8 @@ import '../../modules/maintenance/maintenance_controller.dart'
     show MaintenanceItem;
 
 class TraccarApiService extends GetxService {
-  static const String baseUrl = 'http://46.250.229.199:9082';
-  static const String wsUrl = 'ws://46.250.229.199:9082';
+  static const String baseUrl = 'https://api.topantau.my.id';
+  static const String wsUrl = 'wss://api.topantau.my.id';
 
   String? _sessionCookie;
   TraccarUser? _currentUser;
